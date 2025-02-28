@@ -44,7 +44,7 @@ const generateWorkEntries = (userId: number): WorkEntry[] => {
   return entries
 }
 
-export default function UserDetailPage({ params }: { params: { id: string } }) {
+export default function UserDetailPage({ params }: any ) {
   const router = useRouter()
   const userId = Number.parseInt(params.id)
   const [user, setUser] = useState<User | null>(null)

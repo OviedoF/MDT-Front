@@ -136,7 +136,7 @@ export default function ManageProjectsPage() {
     }
   }
 
-  const ProjectForm = ({ project, setProject, isNewProject = false }) => (
+  const ProjectForm = ({ project, setProject, isNewProject = false } : any) => (
     <>
       <input
         type="text"
@@ -225,7 +225,7 @@ export default function ManageProjectsPage() {
         <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
         <DatePicker
           selected={project.billingDate}
-          onChange={(date: Date) => setProject({ ...project, billingDate: date })}
+          onChange={(date: any) => setProject({ ...project, billingDate: date })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -233,7 +233,7 @@ export default function ManageProjectsPage() {
         <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
         <DatePicker
           selected={project.startDate}
-          onChange={(date: Date) => setProject({ ...project, startDate: date })}
+          onChange={(date: any) => setProject({ ...project, startDate: date })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -241,7 +241,7 @@ export default function ManageProjectsPage() {
         <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
         <DatePicker
           selected={project.endDate}
-          onChange={(date: Date) => setProject({ ...project, endDate: date })}
+          onChange={(date: any) => setProject({ ...project, endDate: date })}
           className="w-full p-2 border rounded"
         />
       </div>

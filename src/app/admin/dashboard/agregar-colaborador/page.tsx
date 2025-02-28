@@ -8,27 +8,27 @@ import { FaUserPlus, FaSignOutAlt } from "react-icons/fa"
 interface User {
   id: number
   name: string
-  role: "supervisor" | "colaborador"
+  role: "topografo" | "colaborador"
 }
 
 interface Project {
   id: number
   name: string
   description: string
-  supervisor: number
+  topografo: number
   collaborators: number[]
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", role: "supervisor" },
+  { id: 1, name: "Juan Pérez", role: "topografo" },
   { id: 2, name: "María García", role: "colaborador" },
   { id: 3, name: "Carlos López", role: "colaborador" },
   { id: 4, name: "Ana Rodríguez", role: "colaborador" },
 ]
 
 const initialProjects: Project[] = [
-  { id: 1, name: "Proyecto A", description: "Descripción del Proyecto A", supervisor: 1, collaborators: [2] },
-  { id: 2, name: "Proyecto B", description: "Descripción del Proyecto B", supervisor: 1, collaborators: [3] },
+  { id: 1, name: "Proyecto A", description: "Descripción del Proyecto A", topografo: 1, collaborators: [2] },
+  { id: 2, name: "Proyecto B", description: "Descripción del Proyecto B", topografo: 1, collaborators: [3] },
 ]
 
 export default function AddCollaboratorPage() {
@@ -42,7 +42,7 @@ export default function AddCollaboratorPage() {
   const [availableCollaborators, setAvailableCollaborators] = useState<User[]>([])
 
   useEffect(() => {
-    // Filter out users who are already collaborators or are supervisors
+    // Filter out users who are already collaborators or are topografos
     const availableUsers = users.filter(
       (user) =>
         user.role === "colaborador" &&

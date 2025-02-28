@@ -1,14 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { useState } from "react"
 import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram } from "react-icons/fa"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 interface User {
   id: number
   name: string
-  role: "supervisor" | "colaborador"
+  role: "supervisor" | "colaborador" | "topografo"
 }
 
 interface Project {
@@ -16,18 +18,36 @@ interface Project {
   name: string
   description: string
   supervisor: number
+  topographers: number[]
   collaborators: number[]
+  totalCost: number
+  hourlyRate: number
+  billingDate: Date | null
+  startDate: Date | null
+  endDate: Date | null
 }
 
 const initialUsers: User[] = [
   { id: 1, name: "Juan Pérez", role: "supervisor" },
   { id: 2, name: "María García", role: "colaborador" },
-  { id: 3, name: "Carlos López", role: "colaborador" },
+  { id: 3, name: "Carlos López", role: "topografo" },
+  { id: 4, name: "Ana Rodríguez", role: "topografo" },
 ]
 
 const initialProjects: Project[] = [
-  { id: 1, name: "Proyecto A", description: "Descripción del Proyecto A", supervisor: 1, collaborators: [2, 3] },
-  { id: 2, name: "Proyecto B", description: "Descripción del Proyecto B", supervisor: 1, collaborators: [2] },
+  {
+    id: 1,
+    name: "Proyecto A",
+    description: "Descripción del Proyecto A",
+    supervisor: 1,
+    topographers: [3],
+    collaborators: [2],
+    totalCost: 10000,
+    hourlyRate: 50,
+    billingDate: new Date(),
+    startDate: new Date(),
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+  },
 ]
 
 export default function ManageProjectsPage() {
@@ -40,7 +60,13 @@ export default function ManageProjectsPage() {
     name: "",
     description: "",
     supervisor: 0,
+    topographers: [],
     collaborators: [],
+    totalCost: 0,
+    hourlyRate: 0,
+    billingDate: null,
+    startDate: null,
+    endDate: null,
   })
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
@@ -54,6 +80,22 @@ export default function ManageProjectsPage() {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
       return false
     }
+    if (project.totalCost < 0) {
+      enqueueSnackbar("El costo total debe ser un número positivo", { variant: "warning" })
+      return false
+    }
+    if (project.hourlyRate < 0) {
+      enqueueSnackbar("El costo por hora debe ser un número positivo", { variant: "warning" })
+      return false
+    }
+    if (!project.billingDate || !project.startDate || !project.endDate) {
+      enqueueSnackbar("Todas las fechas son obligatorias", { variant: "warning" })
+      return false
+    }
+    if (project.startDate > project.endDate) {
+      enqueueSnackbar("La fecha de inicio debe ser anterior a la fecha final", { variant: "warning" })
+      return false
+    }
     return true
   }
 
@@ -61,7 +103,18 @@ export default function ManageProjectsPage() {
     if (!validateProject(newProject)) return
     setProjects([...projects, { ...newProject, id: projects.length + 1 }])
     setIsCreateModalOpen(false)
-    setNewProject({ name: "", description: "", supervisor: 0, collaborators: [] })
+    setNewProject({
+      name: "",
+      description: "",
+      supervisor: 0,
+      topographers: [],
+      collaborators: [],
+      totalCost: 0,
+      hourlyRate: 0,
+      billingDate: null,
+      startDate: null,
+      endDate: null,
+    })
     enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
   }
 
@@ -83,10 +136,122 @@ export default function ManageProjectsPage() {
     }
   }
 
+  const ProjectForm = ({ project, setProject, isNewProject = false }) => (
+    <>
+      <input
+        type="text"
+        placeholder="Nombre del Proyecto"
+        value={project.name}
+        onChange={(e) => setProject({ ...project, name: e.target.value })}
+        className="w-full p-2 mb-4 border rounded"
+      />
+      <textarea
+        placeholder="Descripción (opcional)"
+        value={project.description}
+        onChange={(e) => setProject({ ...project, description: e.target.value })}
+        className="w-full p-2 mb-4 border rounded"
+      />
+      <select
+        value={project.supervisor}
+        onChange={(e) => setProject({ ...project, supervisor: Number(e.target.value) })}
+        className="w-full p-2 mb-4 border rounded"
+      >
+        <option value={0}>Seleccionar Supervisor</option>
+        {initialUsers
+          .filter((user) => user.role === "supervisor")
+          .map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
+      </select>
+      <select
+        multiple
+        value={project.topographers.map(String)}
+        onChange={(e) =>
+          setProject({
+            ...project,
+            topographers: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+          })
+        }
+        className="w-full p-2 mb-4 border rounded"
+      >
+        {initialUsers
+          .filter((user) => user.role === "topografo")
+          .map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
+      </select>
+      <select
+        multiple
+        value={project.collaborators.map(String)}
+        onChange={(e) =>
+          setProject({
+            ...project,
+            collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+          })
+        }
+        className="w-full p-2 mb-4 border rounded"
+      >
+        {initialUsers
+          .filter((user) => user.role === "colaborador")
+          .map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
+      </select>
+      <input
+        type="number"
+        placeholder="Costo Total del Proyecto"
+        value={project.totalCost}
+        onChange={(e) => setProject({ ...project, totalCost: Math.max(0, Number(e.target.value)) })}
+        min="0"
+        step="0.01"
+        className="w-full p-2 mb-4 border rounded"
+      />
+      <input
+        type="number"
+        placeholder="Costo por Hora"
+        value={project.hourlyRate}
+        onChange={(e) => setProject({ ...project, hourlyRate: Math.max(0, Number(e.target.value)) })}
+        min="0"
+        step="0.01"
+        className="w-full p-2 mb-4 border rounded"
+      />
+      <div className="mb-4 flex flex-col">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
+        <DatePicker
+          selected={project.billingDate}
+          onChange={(date: Date) => setProject({ ...project, billingDate: date })}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+      <div className="mb-4 flex flex-col">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+        <DatePicker
+          selected={project.startDate}
+          onChange={(date: Date) => setProject({ ...project, startDate: date })}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+      <div className="mb-4 flex flex-col">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
+        <DatePicker
+          selected={project.endDate}
+          onChange={(date: Date) => setProject({ ...project, endDate: date })}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+    </>
+  )
+
   return (
     <main className="bg-violet-100 w-full min-h-screen">
       <header className="bg-violet-600 text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">wProyectos</h1>
+        <h1 className="text-2xl font-bold">Manejar Proyectos</h1>
         <button
           onClick={() => router.push("/admin/dashboard")}
           className="flex items-center bg-violet-700 hover:bg-violet-800 px-4 py-2 rounded-md transition duration-300"
@@ -113,13 +278,22 @@ export default function ManageProjectsPage() {
                   Nombre
                 </th>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Descripción
-                </th>
-                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Supervisor
                 </th>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Colaboradores
+                  Topógrafos
+                </th>
+                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Costo Total
+                </th>
+                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Costo por Hora
+                </th>
+                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Fecha Inicio
+                </th>
+                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Fecha Final
                 </th>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Acciones
@@ -130,13 +304,16 @@ export default function ManageProjectsPage() {
               {projects.map((project) => (
                 <tr key={project.id}>
                   <td className="px-6 py-4 whitespace-nowrap">{project.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{project.description}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {initialUsers.find((user) => user.id === project.supervisor)?.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {project.collaborators.map((id) => initialUsers.find((user) => user.id === id)?.name).join(", ")}
+                    {project.topographers.map((id) => initialUsers.find((user) => user.id === id)?.name).join(", ")}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">${project.totalCost.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">${project.hourlyRate.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{project.startDate?.toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{project.endDate?.toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => {
@@ -167,54 +344,9 @@ export default function ManageProjectsPage() {
       {/* Create Project Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
-          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl">
             <h3 className="text-lg font-bold mb-4">Crear Proyecto</h3>
-            <input
-              type="text"
-              placeholder="Nombre del Proyecto"
-              value={newProject.name}
-              onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-              className="w-full p-2 mb-4 border rounded"
-            />
-            <textarea
-              placeholder="Descripción (opcional)"
-              value={newProject.description}
-              onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-              className="w-full p-2 mb-4 border rounded"
-            />
-            <select
-              value={newProject.supervisor}
-              onChange={(e) => setNewProject({ ...newProject, supervisor: Number(e.target.value) })}
-              className="w-full p-2 mb-4 border rounded"
-            >
-              <option value={0}>Seleccionar Supervisor</option>
-              {initialUsers
-                .filter((user) => user.role === "supervisor")
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-            </select>
-            <select
-              multiple
-              value={newProject.collaborators.map(String)}
-              onChange={(e) =>
-                setNewProject({
-                  ...newProject,
-                  collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
-                })
-              }
-              className="w-full p-2 mb-4 border rounded"
-            >
-              {initialUsers
-                .filter((user) => user.role === "colaborador")
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-            </select>
+            <ProjectForm project={newProject} setProject={setNewProject} isNewProject={true} />
             <div className="flex justify-end">
               <button
                 onClick={handleCreateProject}
@@ -236,54 +368,9 @@ export default function ManageProjectsPage() {
       {/* Edit Project Modal */}
       {isEditModalOpen && currentProject && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
-          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl">
             <h3 className="text-lg font-bold mb-4">Editar Proyecto</h3>
-            <input
-              type="text"
-              placeholder="Nombre del Proyecto"
-              value={currentProject.name}
-              onChange={(e) => setCurrentProject({ ...currentProject, name: e.target.value })}
-              className="w-full p-2 mb-4 border rounded"
-            />
-            <textarea
-              placeholder="Descripción (opcional)"
-              value={currentProject.description}
-              onChange={(e) => setCurrentProject({ ...currentProject, description: e.target.value })}
-              className="w-full p-2 mb-4 border rounded"
-            />
-            <select
-              value={currentProject.supervisor}
-              onChange={(e) => setCurrentProject({ ...currentProject, supervisor: Number(e.target.value) })}
-              className="w-full p-2 mb-4 border rounded"
-            >
-              <option value={0}>Seleccionar Supervisor</option>
-              {initialUsers
-                .filter((user) => user.role === "supervisor")
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-            </select>
-            <select
-              multiple
-              value={currentProject.collaborators.map(String)}
-              onChange={(e) =>
-                setCurrentProject({
-                  ...currentProject,
-                  collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
-                })
-              }
-              className="w-full p-2 mb-4 border rounded"
-            >
-              {initialUsers
-                .filter((user) => user.role === "colaborador")
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-            </select>
+            <ProjectForm project={currentProject} setProject={setCurrentProject} />
             <div className="flex justify-end">
               <button
                 onClick={handleUpdateProject}
@@ -305,7 +392,7 @@ export default function ManageProjectsPage() {
       {/* Delete Project Modal */}
       {isDeleteModalOpen && currentProject && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
-          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Confirmar Eliminación</h3>
             <p>¿Estás seguro de que quieres eliminar el proyecto {currentProject.name}?</p>
             <div className="flex justify-end mt-4">
@@ -328,3 +415,4 @@ export default function ManageProjectsPage() {
     </main>
   )
 }
+

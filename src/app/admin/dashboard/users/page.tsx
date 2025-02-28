@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
 import { useState } from "react"
-import { FaEdit, FaSignOutAlt, FaTrash, FaUserPlus } from "react-icons/fa"
+import { FaClock, FaEdit, FaSignOutAlt, FaTrash, FaUserPlus } from "react-icons/fa"
 
-type UserRole = "supervisor" | "colaborador"
+type UserRole = "topografo" | "colaborador"
 
 interface User {
   id: number
@@ -16,7 +16,7 @@ interface User {
 }
 
 const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", email: "juan@example.com", password: "password123", role: "supervisor" },
+  { id: 1, name: "Juan Pérez", email: "juan@example.com", password: "password123", role: "topografo" },
   { id: 2, name: "María García", email: "maria@example.com", password: "password456", role: "colaborador" },
   { id: 3, name: "Carlos López", email: "carlos@example.com", password: "password789", role: "colaborador" },
 ]
@@ -30,6 +30,7 @@ export default function ManageUsersPage() {
   const [newUser, setNewUser] = useState<Omit<User, "id">>({ name: "", email: "", password: "", role: "colaborador" })
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
+  const navigate = useRouter().push;
 
   const validateUser = (user: Omit<User, "id">) => {
     if (!user.name.trim()) {
@@ -120,6 +121,16 @@ export default function ManageUsersPage() {
                   <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
+
+                    <button
+                      onClick={() => {
+                        navigate(`/admin/dashboard/users/horarios/${user.id}`)
+                      }}
+                      className="text-blue-600 hover:text-blue-900 mr-2"
+                    >
+                      <FaClock />
+                    </button>
+
                     <button
                       onClick={() => {
                         setCurrentUser(user)
@@ -129,6 +140,7 @@ export default function ManageUsersPage() {
                     >
                       <FaEdit />
                     </button>
+
                     <button
                       onClick={() => {
                         setCurrentUser(user)
@@ -177,7 +189,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value as UserRole })}
               className="w-full p-2 mb-4 border rounded"
             >
-              <option value="supervisor">Supervisor</option>
+              <option value="topografo">Topógrafo</option>
               <option value="colaborador">Colaborador</option>
             </select>
             <div className="flex justify-end">
@@ -229,7 +241,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setCurrentUser({ ...currentUser, role: e.target.value as UserRole })}
               className="w-full p-2 mb-4 border rounded"
             >
-              <option value="supervisor">Supervisor</option>
+              <option value="topografo">Topógrafo</option>
               <option value="colaborador">Colaborador</option>
             </select>
             <div className="flex justify-end">

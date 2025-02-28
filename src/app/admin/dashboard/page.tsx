@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { FaUsers, FaProjectDiagram, FaUserPlus, FaSignOutAlt, FaCalendar, FaDollarSign } from "react-icons/fa"
+import { FaUsers, FaProjectDiagram, FaUserPlus, FaSignOutAlt, FaCalendar, FaDollarSign, FaPaperPlane } from "react-icons/fa"
 
 type DashboardOption = "users" | "projects" | "addCollaborator" | "calendar" | "freeCollaborators"
 
@@ -15,6 +15,7 @@ const pages = [
   { name: "Rotación de personal", path: "/admin/dashboard/rotacion-personal", icon: <FaProjectDiagram className="text-4xl mb-2" /> },
   { name: "Reporte de salarios", path: "/admin/dashboard/reporte-salarios", icon: <FaDollarSign className="text-4xl mb-2" /> },
   { name: "Costo de proyectos", path: "/admin/dashboard/costo-proyectos", icon: <FaDollarSign className="text-4xl mb-2" /> },
+  { name: "Enviar resúmen", path: "/admin/dashboard/enviar-resumen", icon: <FaPaperPlane className="text-4xl mb-2" /> },
 ]
 
 export default function DashboardPage() {

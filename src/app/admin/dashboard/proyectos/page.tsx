@@ -143,6 +143,9 @@ export default function ManageProjectsPage() {
       billingDate: null,
       startDate: null,
       endDate: null,
+      email: "",
+      extraHourInternal: 0,
+      extraHourClient: 0
     })
     enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
   }

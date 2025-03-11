@@ -2,78 +2,102 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FaSignOutAlt } from "react-icons/fa"
+import { FaSignOutAlt, FaUser, FaClock } from "react-icons/fa"
+import {
+  format,
+  startOfWeek,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+} from "date-fns"
+import { es } from "date-fns/locale"
 
-interface Project {
+interface User {
   id: number
   name: string
 }
 
-interface HourStatus {
-  status: "worked" | "rested" | "not-worked"
+interface WorkEntry {
+  userId: number
+  date: Date
+  hours: number
+  infoCompleted: boolean
 }
 
-type DaySchedule = HourStatus[]
-
-interface ProjectSchedule {
-  [date: string]: DaySchedule
-}
-
-const initialProjects: Project[] = [
-  { id: 1, name: "Proyecto A" },
-  { id: 2, name: "Proyecto B" },
-  { id: 3, name: "Proyecto C" },
+const users: User[] = [
+  { id: 1, name: "Juan Pérez" },
+  { id: 2, name: "María García" },
+  { id: 3, name: "Carlos López" },
 ]
 
-const generateRandomSchedule = (): DaySchedule => {
-  return Array.from({ length: 24 }, () => {
-    const random = Math.random()
-    if (random < 0.6) return { status: "worked" }
-    if (random < 0.8) return { status: "rested" }
-    return { status: "not-worked" }
+// Función para generar datos de ejemplo
+const generateWorkEntries = (startDate: Date, endDate: Date): WorkEntry[] => {
+  const entries: WorkEntry[] = []
+  const days = eachDayOfInterval({ start: startDate, end: endDate })
+
+  days.forEach((day) => {
+    users.forEach((user) => {
+      if (Math.random() > 0.1) {
+        // 90% de probabilidad de que un usuario trabaje en un día
+        entries.push({
+          userId: user.id,
+          date: day,
+          hours: Math.floor(Math.random() * 8) + 1,
+          infoCompleted: Math.random() > 0.2, // 80% de probabilidad de que la información esté completa
+        })
+      }
+    })
   })
+
+  return entries
 }
 
-const generateProjectSchedule = (): ProjectSchedule => {
-  const schedule: ProjectSchedule = {}
-  const today = new Date()
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    schedule[date.toISOString().split("T")[0]] = generateRandomSchedule()
-  }
-  return schedule
-}
-
-export default function ProjectCalendarPage() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
-  const [selectedProject, setSelectedProject] = useState<number>(0)
-  const [projectSchedule, setProjectSchedule] = useState<ProjectSchedule>({})
+export default function WorkCalendarPage() {
   const router = useRouter()
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [viewMode, setViewMode] = useState<"month" | "week">("month")
+  const [workEntries, setWorkEntries] = useState<WorkEntry[]>([])
 
   useEffect(() => {
-    if (selectedProject !== 0) {
-      setProjectSchedule(generateProjectSchedule())
-    }
-  }, [selectedProject])
+    const startDate = viewMode === "month" ? startOfMonth(currentDate) : startOfWeek(currentDate)
+    const endDate = viewMode === "month" ? endOfMonth(currentDate) : addDays(startDate, 6)
+    setWorkEntries(generateWorkEntries(startDate, endDate))
+  }, [currentDate, viewMode])
 
-  const getStatusColor = (status: HourStatus["status"]) => {
-    switch (status) {
-      case "worked":
-        return "bg-green-500"
-      case "rested":
-        return "bg-yellow-500"
-      case "not-worked":
-        return "bg-red-500"
-      default:
-        return "bg-gray-200"
+  const getDaysToShow = () => {
+    if (viewMode === "month") {
+      return eachDayOfInterval({
+        start: startOfMonth(currentDate),
+        end: endOfMonth(currentDate),
+      })
+    } else {
+      const start = startOfWeek(currentDate)
+      return Array.from({ length: 7 }, (_, i) => addDays(start, i))
     }
+  }
+
+  const getDayColor = (day: Date) => {
+    const dayEntries = workEntries.filter((entry) => isSameDay(entry.date, day))
+    if (dayEntries.length === 0) return "bg-gray-200"
+    return dayEntries.every((entry) => entry.infoCompleted) ? "bg-green-200" : "bg-red-200"
+  }
+
+  const handleDateClick = (day: Date) => {
+    setSelectedDate(day)
+  }
+
+  const getDayDetails = (day: Date) => {
+    return workEntries.filter((entry) => isSameDay(entry.date, day))
   }
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
       <header className="bg-violet-600 text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Calendario de Proyecto</h1>
+        <h1 className="text-2xl font-bold">Calendario de Trabajo</h1>
         <button
           onClick={() => router.push("/admin/dashboard")}
           className="flex items-center bg-violet-700 hover:bg-violet-800 px-4 py-2 rounded-md transition duration-300"
@@ -84,70 +108,59 @@ export default function ProjectCalendarPage() {
       </header>
 
       <section className="p-4">
-        <div className="mb-6 bg-white p-4 rounded-lg shadow-md">
-          <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
-            Seleccionar Proyecto
-          </label>
-          <select
-            id="project"
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(Number(e.target.value))}
-            className="w-full p-2 border rounded"
-          >
-            <option value={0}>Selecciona un proyecto</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">
+              {format(currentDate, viewMode === "month" ? "MMMM yyyy" : "'Semana del' d 'de' MMMM", { locale: es })}
+            </h2>
+            <div className="space-x-2">
+              <button
+                onClick={() => setViewMode("month")}
+                className={`px-4 py-2 rounded ${viewMode === "month" ? "bg-violet-600 text-white" : "bg-gray-200"}`}
+              >
+                Mes
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`px-4 py-2 rounded ${viewMode === "week" ? "bg-violet-600 text-white" : "bg-gray-200"}`}
+              >
+                Semana
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {getDaysToShow().map((day, index) => (
+              <div
+                key={index}
+                className={`p-2 text-center cursor-pointer ${getDayColor(day)} ${
+                  isSameMonth(day, currentDate) ? "" : "text-gray-400"
+                }`}
+                onClick={() => handleDateClick(day)}
+              >
+                {format(day, "d")}
+              </div>
             ))}
-          </select>
+          </div>
         </div>
 
-        {selectedProject !== 0 && (
-          <div className="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border">Fecha</th>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <th key={i} className="px-4 py-2 border">
-                      {i.toString().padStart(2, "0")}:00
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(projectSchedule).map(([date, schedule]) => (
-                  <tr key={date}>
-                    <td className="px-4 py-2 border font-medium">{date}</td>
-                    {schedule.map((hour, index) => (
-                      <td key={index} className={`px-4 py-2 border ${getStatusColor(hour.status)}`}>
-                        &nbsp;
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {selectedProject !== 0 && (
-          <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-2">Leyenda</h2>
-            <div className="flex space-x-4">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 mr-2"></div>
-                <span>Trabajado</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 mr-2"></div>
-                <span>Descansado</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-500 mr-2"></div>
-                <span>No Trabajado</span>
-              </div>
+        {selectedDate && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-bold mb-4">
+              Detalle del {format(selectedDate, "d 'de' MMMM", { locale: es })}
+            </h3>
+            <div className="space-y-4">
+              {getDayDetails(selectedDate).map((entry, index) => (
+                <div key={index} className="flex items-center space-x-4 p-2 bg-gray-100 rounded">
+                  <FaUser className="text-violet-600" />
+                  <span className="font-medium">{users.find((u) => u.id === entry.userId)?.name}</span>
+                  <FaClock className="text-violet-600" />
+                  <span>{entry.hours} horas</span>
+                  <span className={entry.infoCompleted ? "text-green-500" : "text-red-500"}>
+                    {entry.infoCompleted ? "Información completa" : "Información incompleta"}
+                  </span>
+                </div>
+              ))}
+              {getDayDetails(selectedDate).length === 0 && <p>No hay registros de trabajo para este día.</p>}
             </div>
           </div>
         )}
@@ -155,3 +168,4 @@ export default function ProjectCalendarPage() {
     </main>
   )
 }
+

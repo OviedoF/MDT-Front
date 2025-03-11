@@ -121,7 +121,15 @@ export default function MonthlyPayrollPage() {
 
       <section className="p-4">
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">Resumen de Nómina</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold mb-4">Resúmen de Nómina</h2>
+
+            <select className="block p-2 border border-gray-300 rounded-md mb-4">
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="365">Últimos 365 días</option>
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>

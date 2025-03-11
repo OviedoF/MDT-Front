@@ -13,13 +13,15 @@ interface User {
 interface Project {
   id: number
   name: string
+  hourlyRate: number
 }
 
 interface WorkEntry {
   userId: number
   projectId: number
   date: Date
-  hours: number
+  regularHours: number
+  overtimeHours: number
 }
 
 const users: User[] = [
@@ -30,9 +32,9 @@ const users: User[] = [
 ]
 
 const projects: Project[] = [
-  { id: 1, name: "Proyecto A" },
-  { id: 2, name: "Proyecto B" },
-  { id: 3, name: "Proyecto C" },
+  { id: 1, name: "Proyecto A", hourlyRate: 25 },
+  { id: 2, name: "Proyecto B", hourlyRate: 30 },
+  { id: 3, name: "Proyecto C", hourlyRate: 28 },
 ]
 
 // Generar datos de ejemplo para los últimos 28 días
@@ -44,8 +46,9 @@ const generateWorkEntries = (): WorkEntry[] => {
       const date = new Date(now)
       date.setDate(now.getDate() - i)
       const projectId = Math.floor(Math.random() * projects.length) + 1
-      const hours = Math.floor(Math.random() * 8) + 1 // 1-8 horas por día
-      entries.push({ userId: user.id, projectId, date, hours })
+      const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
+      const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
+      entries.push({ userId: user.id, projectId, date, regularHours, overtimeHours })
     })
   }
   return entries
@@ -55,11 +58,13 @@ const workEntries = generateWorkEntries()
 
 export default function CollaboratorProjectsPage() {
   const router = useRouter()
-  const [userProjects, setUserProjects] = useState<{ [key: number]: { [key: number]: number } }>({})
+  const [userProjects, setUserProjects] = useState<{
+    [key: number]: { [key: number]: { total: number; daily: number; overtime: number } }
+  }>({})
 
   useEffect(() => {
     const calculateUserProjects = () => {
-      const result: { [key: number]: { [key: number]: number } } = {}
+      const result: { [key: number]: { [key: number]: { total: number; daily: number; overtime: number } } } = {}
       const twentyEightDaysAgo = new Date()
       twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28)
 
@@ -69,9 +74,11 @@ export default function CollaboratorProjectsPage() {
             result[entry.userId] = {}
           }
           if (!result[entry.userId][entry.projectId]) {
-            result[entry.userId][entry.projectId] = 0
+            result[entry.userId][entry.projectId] = { total: 0, daily: 0, overtime: 0 }
           }
-          result[entry.userId][entry.projectId] += entry.hours
+          result[entry.userId][entry.projectId].total += entry.regularHours + entry.overtimeHours
+          result[entry.userId][entry.projectId].daily += entry.regularHours
+          result[entry.userId][entry.projectId].overtime += entry.overtimeHours
         }
       })
 
@@ -82,7 +89,11 @@ export default function CollaboratorProjectsPage() {
   }, [])
 
   const getTotalHours = (userId: number) => {
-    return Object.values(userProjects[userId] || {}).reduce((sum, hours) => sum + hours, 0)
+    return Object.values(userProjects[userId] || {}).reduce((sum, hours) => sum + hours.total, 0)
+  }
+
+  const formatHours = (hours: number) => {
+    return (hours / 28).toFixed(2) // Promedio diario en los últimos 28 días
   }
 
   return (
@@ -112,24 +123,38 @@ export default function CollaboratorProjectsPage() {
                       Proyecto
                     </th>
                     <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Horas Acumuladas
+                      Horas Totales
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Horas Diarias (Promedio)
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Horas Extras (Promedio)
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Costo por Hora
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(userProjects[user.id] || {}).map(([projectId, hours]) => (
-                    <tr key={projectId}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {projects.find((p) => p.id === Number.parseInt(projectId))?.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{hours} horas</td>
-                    </tr>
-                  ))}
+                  {Object.entries(userProjects[user.id] || {}).map(([projectId, hours]) => {
+                    const project = projects.find((p) => p.id === Number.parseInt(projectId))
+                    return (
+                      <tr key={projectId}>
+                        <td className="px-6 py-4 whitespace-nowrap">{project?.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{hours.total} horas</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{formatHours(hours.daily)} horas</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{formatHours(hours.overtime)} horas</td>
+                        <td className="px-6 py-4 whitespace-nowrap">${project?.hourlyRate.toFixed(2)}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
                 <tfoot>
                   <tr className="bg-gray-100">
                     <td className="px-6 py-4 whitespace-nowrap font-bold">Total</td>
                     <td className="px-6 py-4 whitespace-nowrap font-bold">{getTotalHours(user.id)} horas</td>
+                    <td colSpan={3}></td>
                   </tr>
                 </tfoot>
               </table>

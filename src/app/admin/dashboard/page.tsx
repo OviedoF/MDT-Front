@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { FaUsers, FaProjectDiagram, FaUserPlus, FaSignOutAlt, FaCalendar, FaDollarSign, FaPaperPlane } from "react-icons/fa"
+import { FaUsers, FaProjectDiagram, FaUserPlus, FaSignOutAlt, FaCalendar, FaDollarSign, FaPaperPlane, FaBell, FaPlus } from "react-icons/fa"
+import Link from "next/link"
 
 type DashboardOption = "users" | "projects" | "addCollaborator" | "calendar" | "freeCollaborators"
 
@@ -16,6 +17,7 @@ const pages = [
   { name: "Reporte de salarios", path: "/admin/dashboard/reporte-salarios", icon: <FaDollarSign className="text-4xl mb-2" /> },
   { name: "Costo de proyectos", path: "/admin/dashboard/costo-proyectos", icon: <FaDollarSign className="text-4xl mb-2" /> },
   { name: "Enviar resúmen", path: "/admin/dashboard/enviar-resumen", icon: <FaPaperPlane className="text-4xl mb-2" /> },
+  { name: "Aprobar horas extras", path: "/admin/dashboard/aprobar-horas-extras", icon: <FaPlus className="text-4xl mb-2" /> },
 ]
 
 export default function DashboardPage() {
@@ -32,13 +34,19 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-violet-100">
       <header className="bg-violet-600 text-white p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center bg-violet-700 hover:bg-violet-800 px-4 py-2 rounded-md transition duration-300"
-        >
-          <FaSignOutAlt className="mr-2" />
-          Cerrar Sesión
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={handleLogout}
+            className="flex items-center bg-violet-700 hover:bg-violet-800 px-4 py-2 rounded-md transition duration-300"
+          >
+            <FaSignOutAlt className="mr-2" />
+            Cerrar Sesión
+          </button>
+
+          <Link href={'/admin/dashboard/llenados'}>
+            <FaBell className="text-white text-2xl ml-4" />
+          </Link>
+        </div>
       </header>
       <main className="container mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

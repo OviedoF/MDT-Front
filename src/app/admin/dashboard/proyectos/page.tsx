@@ -25,6 +25,9 @@ interface Project {
   billingDate: Date | null
   startDate: Date | null
   endDate: Date | null
+  email: string 
+  extraHourInternal: number
+  extraHourClient: number
 }
 
 const initialUsers: User[] = [
@@ -47,6 +50,9 @@ const initialProjects: Project[] = [
     billingDate: new Date(),
     startDate: new Date(),
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+    email: "supervisor@gmail.com",
+    extraHourInternal: 0,
+    extraHourClient: 0
   },
 ]
 
@@ -67,6 +73,9 @@ export default function ManageProjectsPage() {
     billingDate: null,
     startDate: null,
     endDate: null,
+    email: "",
+    extraHourInternal: 0,
+    extraHourClient: 0
   })
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
@@ -78,6 +87,10 @@ export default function ManageProjectsPage() {
     }
     if (project.supervisor === 0) {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
+      return false
+    }
+    if(project.email === "") {
+      enqueueSnackbar("El email del supervisor es obligatorio", { variant: "warning" })
       return false
     }
     if (project.totalCost < 0) {
@@ -96,6 +109,22 @@ export default function ManageProjectsPage() {
       enqueueSnackbar("La fecha de inicio debe ser anterior a la fecha final", { variant: "warning" })
       return false
     }
+
+    if (project.extraHourInternal <= 0) {
+      enqueueSnackbar("La hora extra interna debe ser un número positivo", { variant: "warning" })
+      return false
+    }
+
+    if (project.extraHourClient <= 0) {
+      enqueueSnackbar("La hora extra del cliente debe ser un número positivo", { variant: "warning" })
+      return false
+    }
+
+    if(project.extraHourInternal > project.extraHourClient) {
+      enqueueSnackbar("La hora extra interna no puede ser mayor a la hora extra del cliente", { variant: "warning" })
+      return false
+    }
+
     return true
   }
 
@@ -136,109 +165,201 @@ export default function ManageProjectsPage() {
     }
   }
 
-  const ProjectForm = ({ project, setProject, isNewProject = false } : any) => (
+  const ProjectForm = ({ project, setProject, isNewProject = false }: any) => (
     <>
-      <input
-        type="text"
-        placeholder="Nombre del Proyecto"
-        value={project.name}
-        onChange={(e) => setProject({ ...project, name: e.target.value })}
-        className="w-full p-2 mb-4 border rounded"
-      />
-      <textarea
-        placeholder="Descripción (opcional)"
-        value={project.description}
-        onChange={(e) => setProject({ ...project, description: e.target.value })}
-        className="w-full p-2 mb-4 border rounded"
-      />
-      <select
-        value={project.supervisor}
-        onChange={(e) => setProject({ ...project, supervisor: Number(e.target.value) })}
-        className="w-full p-2 mb-4 border rounded"
-      >
-        <option value={0}>Seleccionar Supervisor</option>
-        {initialUsers
-          .filter((user) => user.role === "supervisor")
-          .map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name}
-            </option>
-          ))}
-      </select>
-      <select
-        multiple
-        value={project.topographers.map(String)}
-        onChange={(e) =>
-          setProject({
-            ...project,
-            topographers: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
-          })
-        }
-        className="w-full p-2 mb-4 border rounded"
-      >
-        {initialUsers
-          .filter((user) => user.role === "topografo")
-          .map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name}
-            </option>
-          ))}
-      </select>
-      <select
-        multiple
-        value={project.collaborators.map(String)}
-        onChange={(e) =>
-          setProject({
-            ...project,
-            collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
-          })
-        }
-        className="w-full p-2 mb-4 border rounded"
-      >
-        {initialUsers
-          .filter((user) => user.role === "colaborador")
-          .map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name}
-            </option>
-          ))}
-      </select>
-      <input
-        type="number"
-        placeholder="Costo Total del Proyecto"
-        value={project.totalCost}
-        onChange={(e) => setProject({ ...project, totalCost: Math.max(0, Number(e.target.value)) })}
-        min="0"
-        step="0.01"
-        className="w-full p-2 mb-4 border rounded"
-      />
-      <input
-        type="number"
-        placeholder="Costo por Hora"
-        value={project.hourlyRate}
-        onChange={(e) => setProject({ ...project, hourlyRate: Math.max(0, Number(e.target.value)) })}
-        min="0"
-        step="0.01"
-        className="w-full p-2 mb-4 border rounded"
-      />
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Nombre del Proyecto
+        </label>
+        <input
+          type="text"
+          placeholder="Nombre del Proyecto"
+          value={project.name}
+          onChange={(e) => setProject({ ...project, name: e.target.value })}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Descripción (opcional)
+        </label>
+        <textarea
+          placeholder="Descripción (opcional)"
+          value={project.description}
+          onChange={(e) => setProject({ ...project, description: e.target.value })}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Email del Supervisor 
+        </label>
+
+        <input
+          type="email"
+          placeholder="Email del Supervisor"
+          value={project.email}
+          onChange={(e) => setProject({ ...project, email: e.target.value })}
+          className="w-full p-2 border rounded"
+        /> 
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Supervisor
+        </label>
+        <select
+          value={project.supervisor}
+          onChange={(e) => setProject({ ...project, supervisor: Number(e.target.value) })}
+          className="w-full p-2 border rounded"
+        >
+          <option value={0}>Seleccionar Supervisor</option>
+          {initialUsers
+            .filter((user) => user.role === "supervisor")
+            .map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Topógrafos
+        </label>
+        <select
+          multiple
+          value={project.topographers.map(String)}
+          onChange={(e) =>
+            setProject({
+              ...project,
+              topographers: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+            })
+          }
+          className="w-full p-2 border rounded"
+        >
+          {initialUsers
+            .filter((user) => user.role === "topografo")
+            .map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Colaboradores
+        </label>
+        <select
+          multiple
+          value={project.collaborators.map(String)}
+          onChange={(e) =>
+            setProject({
+              ...project,
+              collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+            })
+          }
+          className="w-full p-2 border rounded"
+        >
+          {initialUsers
+            .filter((user) => user.role === "colaborador")
+            .map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Costo Total del Proyecto
+        </label>
+        <input
+          type="number"
+          placeholder="Costo Total del Proyecto"
+          value={project.totalCost}
+          onChange={(e) => setProject({ ...project, totalCost: Math.max(0, Number(e.target.value)) })}
+          min="0"
+          step="0.01"
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Costo por Hora
+        </label>
+        <input
+          type="number"
+          placeholder="Costo por Hora"
+          value={project.hourlyRate}
+          onChange={(e) => setProject({ ...project, hourlyRate: Math.max(0, Number(e.target.value)) })}
+          min="0"
+          step="0.01"
+          className="w-full p-2 border rounded"
+        />
+      </div>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Hora extra interna 
+        </label>
+
+        <input
+          type="number"
+          placeholder="Hora extra interna"
+          value={project.extraHourInternal}
+          onChange={(e) => setProject({ ...project, extraHourInternal: Math.max(0, Number(e.target.value)) })}
+          min='0'
+        />
+      </div>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Hora extra del cliente 
+        </label>
+
+        <input
+          type="number"
+          placeholder="Hora extra del cliente"
+          value={project.extraHourClient}
+          onChange={(e) => setProject({ ...project, extraHourClient: Math.max(0, Number(e.target.value)) })}
+          min='0'
+        />
+      </div>
+
       <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Fecha de Facturación
+        </label>
         <DatePicker
           selected={project.billingDate}
           onChange={(date: any) => setProject({ ...project, billingDate: date })}
           className="w-full p-2 border rounded"
         />
       </div>
+
       <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Fecha de Inicio
+        </label>
         <DatePicker
           selected={project.startDate}
           onChange={(date: any) => setProject({ ...project, startDate: date })}
           className="w-full p-2 border rounded"
         />
       </div>
+
       <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Fecha Final
+        </label>
         <DatePicker
           selected={project.endDate}
           onChange={(date: any) => setProject({ ...project, endDate: date })}

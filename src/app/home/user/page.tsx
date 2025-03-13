@@ -1,0 +1,78 @@
+"use client"
+import Image from "next/image"
+import Link from "next/link"
+import Navbar from "../components/Navbar"
+import { useRouter } from "next/navigation"
+
+export default function ProfilePage() {
+  const navigate = useRouter().push
+  return (
+    <div className="min-h-screen flex flex-col relative">
+      <div className="bg-green pt-8 pb-16 px-4 relative h-[22vh] flex items-center justify-center">
+          <div className="text-white flex items-center gap-2">
+            <Image src={'/logo_h.svg'} width={120} height={120} alt="Logo" />
+          </div>
+      </div>
+
+      {/* Profile Picture - Positioned to overlap the header */}
+      <div className="relative -mt-12 flex flex-col items-center px-4">
+        <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white relative z-10 -top-2">
+          <Image
+            src="/avatar.png"
+            alt="Profile picture"
+            fill
+          />
+        </div>
+        <h1 className="mt-0 text-3xl font-medium text-gray-800">Amelia González</h1>
+        <p className="text-gray-600 text-md">9302123</p>
+      </div>
+
+      {/* Main Menu */}
+      <div className="px-10 mt-4 space-y-3">
+        <Link
+          href="/home"
+          className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
+        >
+          Proyectos
+        </Link>
+        <Link
+          href="/home/request-hours"
+          className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
+        >
+          Solicitar horas
+        </Link>
+        <Link
+          href="/home/history"
+          className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
+        >
+          Historial
+        </Link>
+      </div>
+
+      {/* Footer Menu */}
+      <div className="mt-10 pt-3">
+        <div className="space-y-0">
+          <Link href="/support" className="block w-full py-4 text-center text-gray-600 hover:text-gray-800 border-b-2 border-[#B3B3B3]">
+            Soporte
+          </Link>
+          <Link href="/legal" className="block w-full py-4 text-center text-gray-600 hover:text-gray-800 border-b-2 border-[#B3B3B3]">
+            Legal
+          </Link>
+          <button
+            className="w-full py-4 text-center text-gray-600 hover:text-gray-800"
+            onClick={() => {
+              // Handle sign out logic here
+              console.log("Sign out clicked")
+              navigate("/")
+            }}
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <Navbar position="relative"/>
+    </div>
+  )
+}
+

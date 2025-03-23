@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { FaSignOutAlt, FaInfoCircle } from "react-icons/fa"
+import { FaSignOutAlt, FaInfoCircle, FaCalendarAlt } from "react-icons/fa"
 
 interface User {
   id: number
@@ -41,23 +41,37 @@ const projects: Project[] = [
 // Generar datos de ejemplo para el mes actual
 const generateWorkEntries = (): WorkEntry[] => {
   const entries: WorkEntry[] = []
+  // Generar datos para los últimos 12 meses
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
 
-  for (let day = new Date(startOfMonth); day <= endOfMonth; day.setDate(day.getDate() + 1)) {
-    users.forEach((user) => {
-      const projectId = Math.floor(Math.random() * projects.length) + 1
-      const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
-      const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
-      entries.push({
-        userId: user.id,
-        projectId,
-        date: new Date(day),
-        regularHours,
-        overtimeHours,
-      })
-    })
+  // Generar datos para los últimos 2 años
+  for (let year = currentYear - 1; year <= currentYear; year++) {
+    for (let month = 0; month < 12; month++) {
+      // Omitir meses futuros
+      if (year === currentYear && month > currentMonth) continue
+
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        // No generar entradas para todos los días para mantener los datos manejables
+        if (day % 3 !== 0) continue // Solo cada 3 días
+
+        users.forEach((user) => {
+          const projectId = Math.floor(Math.random() * projects.length) + 1
+          const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
+          const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
+          entries.push({
+            userId: user.id,
+            projectId,
+            date: new Date(year, month, day),
+            regularHours,
+            overtimeHours,
+          })
+        })
+      }
+    }
   }
   return entries
 }
@@ -68,9 +82,33 @@ export default function MonthlyPayrollPage() {
   const router = useRouter()
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
+
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ]
 
   const calculateUserSummary = (userId: number) => {
-    const userEntries = workEntries.filter((entry) => entry.userId === userId)
+    const startOfMonth = new Date(selectedYear, selectedMonth, 1)
+    const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0)
+
+    const userEntries = workEntries.filter(
+      (entry) => entry.userId === userId && entry.date >= startOfMonth && entry.date <= endOfMonth,
+    )
+
     const totalRegularHours = userEntries.reduce((sum, entry) => sum + entry.regularHours, 0)
     const totalOvertimeHours = userEntries.reduce((sum, entry) => sum + entry.overtimeHours, 0)
     const user = users.find((u) => u.id === userId)!
@@ -120,16 +158,53 @@ export default function MonthlyPayrollPage() {
       </header>
 
       <section className="p-4">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold mb-4">Resúmen de Nómina</h2>
-
-            <select className="block p-2 border border-gray-300 rounded-md mb-4">
-              <option value="30">Últimos 30 días</option>
-              <option value="90">Últimos 90 días</option>
-              <option value="365">Últimos 365 días</option>
-            </select>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-4">
+          <h2 className="text-xl font-bold mb-4 flex items-center">
+            <FaCalendarAlt className="mr-2 text-violet-600" />
+            Seleccionar Período
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                Año
+              </label>
+              <select
+                id="year"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full md:w-32 p-2 border rounded"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+                Mes
+              </label>
+              <select
+                id="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="w-full md:w-40 p-2 border rounded"
+              >
+                {months.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-4">
+            Resumen de Nómina - {months[selectedMonth]} {selectedYear}
+          </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
@@ -181,7 +256,9 @@ export default function MonthlyPayrollPage() {
       {isModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold mb-4">Detalle de {selectedUser.name}</h3>
+            <h3 className="text-lg font-bold mb-4">
+              Detalle de {selectedUser.name} - {months[selectedMonth]} {selectedYear}
+            </h3>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>

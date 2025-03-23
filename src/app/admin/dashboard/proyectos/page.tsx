@@ -3,9 +3,22 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram } from "react-icons/fa"
+import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock } from "react-icons/fa"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
+
+interface WorkingHours {
+  startTime: string
+  endTime: string
+}
+
+interface WorkSchedule {
+  monday: WorkingHours
+  tuesday: WorkingHours
+  wednesday: WorkingHours
+  thursday: WorkingHours
+  friday: WorkingHours
+}
 
 interface User {
   id: number
@@ -25,9 +38,8 @@ interface Project {
   billingDate: Date | null
   startDate: Date | null
   endDate: Date | null
-  email: string 
-  extraHourInternal: number
-  extraHourClient: number
+  active: boolean
+  workSchedule: WorkSchedule
 }
 
 const initialUsers: User[] = [
@@ -36,6 +48,14 @@ const initialUsers: User[] = [
   { id: 3, name: "Carlos López", role: "topografo" },
   { id: 4, name: "Ana Rodríguez", role: "topografo" },
 ]
+
+const defaultWorkSchedule: WorkSchedule = {
+  monday: { startTime: "09:00", endTime: "17:00" },
+  tuesday: { startTime: "09:00", endTime: "17:00" },
+  wednesday: { startTime: "09:00", endTime: "17:00" },
+  thursday: { startTime: "09:00", endTime: "17:00" },
+  friday: { startTime: "09:00", endTime: "17:00" },
+}
 
 const initialProjects: Project[] = [
   {
@@ -50,9 +70,23 @@ const initialProjects: Project[] = [
     billingDate: new Date(),
     startDate: new Date(),
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-    email: "supervisor@gmail.com",
-    extraHourInternal: 0,
-    extraHourClient: 0
+    active: true,
+    workSchedule: defaultWorkSchedule,
+  },
+  {
+    id: 2,
+    name: "Proyecto B",
+    description: "Descripción del Proyecto B",
+    supervisor: 1,
+    topographers: [4],
+    collaborators: [2],
+    totalCost: 15000,
+    hourlyRate: 60,
+    billingDate: new Date(),
+    startDate: new Date(),
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 2)),
+    active: true,
+    workSchedule: defaultWorkSchedule,
   },
 ]
 
@@ -61,8 +95,9 @@ export default function ManageProjectsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
-  const [newProject, setNewProject] = useState<Omit<Project, "id">>({
+  const [newProject, setNewProject] = useState<Omit<Project, "id" | "active">>({
     name: "",
     description: "",
     supervisor: 0,
@@ -73,24 +108,18 @@ export default function ManageProjectsPage() {
     billingDate: null,
     startDate: null,
     endDate: null,
-    email: "",
-    extraHourInternal: 0,
-    extraHourClient: 0
+    workSchedule: defaultWorkSchedule,
   })
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
-  const validateProject = (project: Omit<Project, "id">) => {
+  const validateProject = (project: Omit<Project, "id" | "active">) => {
     if (!project.name.trim()) {
       enqueueSnackbar("El nombre del proyecto es obligatorio", { variant: "warning" })
       return false
     }
     if (project.supervisor === 0) {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
-      return false
-    }
-    if(project.email === "") {
-      enqueueSnackbar("El email del supervisor es obligatorio", { variant: "warning" })
       return false
     }
     if (project.totalCost < 0) {
@@ -110,27 +139,39 @@ export default function ManageProjectsPage() {
       return false
     }
 
-    if (project.extraHourInternal <= 0) {
-      enqueueSnackbar("La hora extra interna debe ser un número positivo", { variant: "warning" })
-      return false
-    }
-
-    if (project.extraHourClient <= 0) {
-      enqueueSnackbar("La hora extra del cliente debe ser un número positivo", { variant: "warning" })
-      return false
-    }
-
-    if(project.extraHourInternal > project.extraHourClient) {
-      enqueueSnackbar("La hora extra interna no puede ser mayor a la hora extra del cliente", { variant: "warning" })
-      return false
+    // Validar horarios
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"] as const
+    for (const day of days) {
+      const { startTime, endTime } = project.workSchedule[day]
+      if (!startTime || !endTime) {
+        enqueueSnackbar(`Debe especificar el horario para ${getDayName(day)}`, { variant: "warning" })
+        return false
+      }
+      if (startTime >= endTime) {
+        enqueueSnackbar(`La hora de inicio debe ser anterior a la hora de fin para ${getDayName(day)}`, {
+          variant: "warning",
+        })
+        return false
+      }
     }
 
     return true
   }
 
+  const getDayName = (day: keyof WorkSchedule) => {
+    const dayNames = {
+      monday: "Lunes",
+      tuesday: "Martes",
+      wednesday: "Miércoles",
+      thursday: "Jueves",
+      friday: "Viernes",
+    }
+    return dayNames[day]
+  }
+
   const handleCreateProject = () => {
     if (!validateProject(newProject)) return
-    setProjects([...projects, { ...newProject, id: projects.length + 1 }])
+    setProjects([...projects, { ...newProject, id: projects.length + 1, active: true }])
     setIsCreateModalOpen(false)
     setNewProject({
       name: "",
@@ -143,9 +184,7 @@ export default function ManageProjectsPage() {
       billingDate: null,
       startDate: null,
       endDate: null,
-      email: "",
-      extraHourInternal: 0,
-      extraHourClient: 0
+      workSchedule: defaultWorkSchedule,
     })
     enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
   }
@@ -168,55 +207,44 @@ export default function ManageProjectsPage() {
     }
   }
 
-  const ProjectForm = ({ project, setProject, isNewProject = false }: any) => (
-    <>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nombre del Proyecto
-        </label>
+  const handleOpenReportModal = (project: Project) => {
+    setCurrentProject(project)
+    setIsReportModalOpen(true)
+  }
+
+  const ProjectForm = ({ project, setProject, isNewProject = false }) => {
+    const updateWorkSchedule = (day: keyof WorkSchedule, field: keyof WorkingHours, value: string) => {
+      setProject({
+        ...project,
+        workSchedule: {
+          ...project.workSchedule,
+          [day]: {
+            ...project.workSchedule[day],
+            [field]: value,
+          },
+        },
+      })
+    }
+
+    return (
+      <>
         <input
           type="text"
           placeholder="Nombre del Proyecto"
           value={project.name}
           onChange={(e) => setProject({ ...project, name: e.target.value })}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Descripción (opcional)
-        </label>
         <textarea
           placeholder="Descripción (opcional)"
           value={project.description}
           onChange={(e) => setProject({ ...project, description: e.target.value })}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Email del Supervisor 
-        </label>
-
-        <input
-          type="email"
-          placeholder="Email del Supervisor"
-          value={project.email}
-          onChange={(e) => setProject({ ...project, email: e.target.value })}
-          className="w-full p-2 border rounded"
-        /> 
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Supervisor
-        </label>
         <select
           value={project.supervisor}
           onChange={(e) => setProject({ ...project, supervisor: Number(e.target.value) })}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         >
           <option value={0}>Seleccionar Supervisor</option>
           {initialUsers
@@ -227,12 +255,6 @@ export default function ManageProjectsPage() {
               </option>
             ))}
         </select>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Topógrafos
-        </label>
         <select
           multiple
           value={project.topographers.map(String)}
@@ -242,7 +264,7 @@ export default function ManageProjectsPage() {
               topographers: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
             })
           }
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         >
           {initialUsers
             .filter((user) => user.role === "topografo")
@@ -252,12 +274,6 @@ export default function ManageProjectsPage() {
               </option>
             ))}
         </select>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Colaboradores
-        </label>
         <select
           multiple
           value={project.collaborators.map(String)}
@@ -267,7 +283,7 @@ export default function ManageProjectsPage() {
               collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
             })
           }
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         >
           {initialUsers
             .filter((user) => user.role === "colaborador")
@@ -277,12 +293,6 @@ export default function ManageProjectsPage() {
               </option>
             ))}
         </select>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Costo Total del Proyecto
-        </label>
         <input
           type="number"
           placeholder="Costo Total del Proyecto"
@@ -290,14 +300,8 @@ export default function ManageProjectsPage() {
           onChange={(e) => setProject({ ...project, totalCost: Math.max(0, Number(e.target.value)) })}
           min="0"
           step="0.01"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Costo por Hora
-        </label>
         <input
           type="number"
           placeholder="Costo por Hora"
@@ -305,72 +309,68 @@ export default function ManageProjectsPage() {
           onChange={(e) => setProject({ ...project, hourlyRate: Math.max(0, Number(e.target.value)) })}
           min="0"
           step="0.01"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 mb-4 border rounded"
         />
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Hora extra interna 
-        </label>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
+          <DatePicker
+            selected={project.billingDate}
+            onChange={(date: Date) => setProject({ ...project, billingDate: date })}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+          <DatePicker
+            selected={project.startDate}
+            onChange={(date: Date) => setProject({ ...project, startDate: date })}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
+          <DatePicker
+            selected={project.endDate}
+            onChange={(date: Date) => setProject({ ...project, endDate: date })}
+            className="w-full p-2 border rounded"
+          />
+        </div>
 
-        <input
-          type="number"
-          placeholder="Hora extra interna"
-          value={project.extraHourInternal}
-          onChange={(e) => setProject({ ...project, extraHourInternal: Math.max(0, Number(e.target.value)) })}
-          min='0'
-        />
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Hora extra del cliente 
-        </label>
+        <div className="mb-4">
+          <h4 className="text-md font-semibold mb-2 flex items-center">
+            <FaClock className="mr-2" /> Horario de Trabajo Normal
+          </h4>
+          <p className="text-sm text-gray-500 mb-2">
+            Defina el horario normal de trabajo para cada día. Las horas fuera de este horario se considerarán como
+            horas extra.
+          </p>
 
-        <input
-          type="number"
-          placeholder="Hora extra del cliente"
-          value={project.extraHourClient}
-          onChange={(e) => setProject({ ...project, extraHourClient: Math.max(0, Number(e.target.value)) })}
-          min='0'
-        />
-      </div>
-
-      <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Fecha de Facturación
-        </label>
-        <DatePicker
-          selected={project.billingDate}
-          onChange={(date: any) => setProject({ ...project, billingDate: date })}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-
-      <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Fecha de Inicio
-        </label>
-        <DatePicker
-          selected={project.startDate}
-          onChange={(date: any) => setProject({ ...project, startDate: date })}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-
-      <div className="mb-4 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Fecha Final
-        </label>
-        <DatePicker
-          selected={project.endDate}
-          onChange={(date: any) => setProject({ ...project, endDate: date })}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-    </>
-  )
+          <div className="space-y-3">
+            {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
+              <div key={day} className="flex items-center">
+                <span className="w-24 font-medium">{getDayName(day)}:</span>
+                <div className="flex items-center">
+                  <input
+                    type="time"
+                    value={project.workSchedule[day].startTime}
+                    onChange={(e) => updateWorkSchedule(day, "startTime", e.target.value)}
+                    className="p-2 border rounded mr-2"
+                  />
+                  <span>a</span>
+                  <input
+                    type="time"
+                    value={project.workSchedule[day].endTime}
+                    onChange={(e) => updateWorkSchedule(day, "endTime", e.target.value)}
+                    className="p-2 border rounded ml-2"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -453,9 +453,15 @@ export default function ManageProjectsPage() {
                         setCurrentProject(project)
                         setIsDeleteModalOpen(true)
                       }}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 mr-2"
                     >
                       <FaTrash />
+                    </button>
+                    <button
+                      onClick={() => handleOpenReportModal(project)}
+                      className="text-success hover:text-success"
+                    >
+                      <FaFileAlt />
                     </button>
                   </td>
                 </tr>
@@ -468,10 +474,12 @@ export default function ManageProjectsPage() {
       {/* Create Project Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
-          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Crear Proyecto</h3>
-            <ProjectForm project={newProject} setProject={setNewProject} isNewProject={true} />
-            <div className="flex justify-end">
+            <div className="max-h-[70vh] overflow-y-auto pr-2">
+              <ProjectForm project={newProject} setProject={setNewProject} isNewProject={true} />
+            </div>
+            <div className="flex justify-end mt-4">
               <button
                 onClick={handleCreateProject}
                 className="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded mr-2"
@@ -492,10 +500,12 @@ export default function ManageProjectsPage() {
       {/* Edit Project Modal */}
       {isEditModalOpen && currentProject && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
-          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Editar Proyecto</h3>
-            <ProjectForm project={currentProject} setProject={setCurrentProject} />
-            <div className="flex justify-end">
+            <div className="max-h-[70vh] overflow-y-auto pr-2">
+              <ProjectForm project={currentProject} setProject={setCurrentProject} />
+            </div>
+            <div className="flex justify-end mt-4">
               <button
                 onClick={handleUpdateProject}
                 className="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded mr-2"
@@ -536,7 +546,170 @@ export default function ManageProjectsPage() {
           </div>
         </div>
       )}
+
+      {/* Report Modal */}
+      {isReportModalOpen && currentProject && (
+        <ProjectReportModal
+          project={currentProject}
+          onClose={() => setIsReportModalOpen(false)}
+          projects={projects.filter((p) => p.active)}
+        />
+      )}
     </main>
+  )
+}
+
+interface ProjectReportModalProps {
+  project: Project
+  onClose: () => void
+  projects: Project[]
+}
+
+function ProjectReportModal({ project: initialProject, onClose, projects }: ProjectReportModalProps) {
+  const [selectedProject, setSelectedProject] = useState<Project>(initialProject)
+  const [startDate, setStartDate] = useState<Date | null>(new Date())
+  const [endDate, setEndDate] = useState<Date | null>(new Date())
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [hoursWorked, setHoursWorked] = useState(120) // Valor de ejemplo
+
+  const handleProjectChange = (projectId: number) => {
+    const project = projects.find((p) => p.id === projectId)
+    if (project) {
+      setSelectedProject(project)
+    }
+  }
+
+  const handleSendReport = () => {
+    setShowConfirmation(true)
+  }
+
+  const confirmSendReport = () => {
+    // Aquí iría la lógica para enviar el informe
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+      <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-4xl">
+        <h3 className="text-lg font-bold mb-4">Informe del Proyecto</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Proyecto</label>
+            <select
+              value={selectedProject.id}
+              onChange={(e) => handleProjectChange(Number(e.target.value))}
+              className="w-full p-2 border rounded"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Intervalo de Tiempo</label>
+            <div className="flex space-x-2">
+              <DatePicker
+                selected={startDate}
+                onChange={(date: Date) => setStartDate(date)}
+                selectsStart
+                startDate={startDate}
+                endDate={endDate}
+                className="w-full p-2 border rounded"
+                placeholderText="Fecha inicio"
+              />
+              <DatePicker
+                selected={endDate}
+                onChange={(date: Date) => setEndDate(date)}
+                selectsEnd
+                startDate={startDate}
+                endDate={endDate}
+                minDate={startDate}
+                className="w-full p-2 border rounded"
+                placeholderText="Fecha fin"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="border p-4 rounded-lg bg-gray-50 mb-4">
+          <h4 className="text-md font-semibold mb-2">Vista Previa del Informe</h4>
+          <div className="bg-white p-4 border rounded">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold">Informe del Proyecto: {selectedProject.name}</h2>
+              <p className="text-sm text-gray-500">
+                Período: {startDate?.toLocaleDateString()} - {endDate?.toLocaleDateString()}
+              </p>
+            </div>
+
+            <table className="min-w-full">
+              <tbody>
+                <tr>
+                  <td className="py-2 font-semibold">Nombre del Proyecto:</td>
+                  <td className="py-2">{selectedProject.name}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-semibold">Costo del Proyecto:</td>
+                  <td className="py-2">${selectedProject.totalCost.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-semibold">Costo por Hora:</td>
+                  <td className="py-2">${selectedProject.hourlyRate.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-semibold">Horas Trabajadas:</td>
+                  <td className="py-2">{hoursWorked} horas</td>
+                </tr>
+                <tr className="border-t">
+                  <td className="py-2 font-semibold">Total:</td>
+                  <td className="py-2">${(selectedProject.hourlyRate * hoursWorked).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleSendReport}
+            className="bg-success hover:bg-success text-white font-bold py-2 px-4 rounded mr-2"
+          >
+            Enviar Informe
+          </button>
+          <button onClick={onClose} className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">Confirmar Envío</h3>
+            <p>
+              Este es el informe que se enviará a los encargados del proyecto "{selectedProject.name}". ¿Está seguro?
+            </p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={confirmSendReport}
+                className="bg-success hover:bg-success text-white font-bold py-2 px-4 rounded mr-2"
+              >
+                Sí, Enviar
+              </button>
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

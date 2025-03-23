@@ -14,6 +14,7 @@ export default {
         lightgreen: "#69816799",
         green: "#698167",
         darkgreen: "#4D5D4C",
+        success: "#4BB543",
       },
     },
   },

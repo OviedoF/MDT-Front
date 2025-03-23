@@ -93,7 +93,7 @@ export default function CollaboratorProjectsPage() {
   }
 
   const formatHours = (hours: number) => {
-    return (hours / 28).toFixed(2) // Promedio diario en los últimos 28 días
+    return parseInt((hours / 28).toFixed(2)) // Promedio diario en los últimos 28 días
   }
 
   return (

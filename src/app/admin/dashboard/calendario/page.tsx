@@ -115,7 +115,9 @@ const generateCalendarData = (currentMonth: Date): DayData[] => {
       // Determinar si este usuario tiene datos completos o no
       // Para días incompletos, asegurar que al menos un usuario esté incompleto
       const isComplete =
-        status === "incomplete" ? user.id !== users[day.getDate() % users.length].id : status !== "incomplete"
+      status === "incomplete"
+      ? user.id !== users[day.getDate() % users.length].id
+      : true 
 
       // Generar horarios realistas
       const startTime = isComplete ? "08:00" : ""

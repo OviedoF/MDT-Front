@@ -3,98 +3,64 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FaSignOutAlt } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
+import { useSnackbar } from "notistack"
 
 interface User {
-  id: number
+  _id: number
   name: string
-  role: "colaborador" | "topografo"
+  total: string
+  projects: Project[]
 }
 
 interface Project {
-  id: number
-  name: string
-  hourlyRate: number
+  _id: number
+  project: string
+  totalHours: string
+  averageDaily: string
+  extraHours: string
+  costPerHour: string
 }
-
-interface WorkEntry {
-  userId: number
-  projectId: number
-  date: Date
-  regularHours: number
-  overtimeHours: number
-}
-
-const users: User[] = [
-  { id: 1, name: "Juan Pérez", role: "colaborador" },
-  { id: 2, name: "María García", role: "topografo" },
-  { id: 3, name: "Carlos López", role: "colaborador" },
-  { id: 4, name: "Ana Rodríguez", role: "topografo" },
-]
-
-const projects: Project[] = [
-  { id: 1, name: "Proyecto A", hourlyRate: 25 },
-  { id: 2, name: "Proyecto B", hourlyRate: 30 },
-  { id: 3, name: "Proyecto C", hourlyRate: 28 },
-]
-
-// Generar datos de ejemplo para los últimos 28 días
-const generateWorkEntries = (): WorkEntry[] => {
-  const entries: WorkEntry[] = []
-  const now = new Date()
-  for (let i = 0; i < 28; i++) {
-    users.forEach((user) => {
-      const date = new Date(now)
-      date.setDate(now.getDate() - i)
-      const projectId = Math.floor(Math.random() * projects.length) + 1
-      const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
-      const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
-      entries.push({ userId: user.id, projectId, date, regularHours, overtimeHours })
-    })
-  }
-  return entries
-}
-
-const workEntries = generateWorkEntries()
 
 export default function CollaboratorProjectsPage() {
   const router = useRouter()
-  const [userProjects, setUserProjects] = useState<{
-    [key: number]: { [key: number]: { total: number; daily: number; overtime: number } }
-  }>({})
+  const [users, setUsers] = useState<User[]>([])
+
+  // Añadir estados para el mes y año seleccionados
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const { enqueueSnackbar } = useSnackbar()
+
+  // Generar arrays para los selectores
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ]
+  const years = Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - 1 + i)
 
   useEffect(() => {
-    const calculateUserProjects = () => {
-      const result: { [key: number]: { [key: number]: { total: number; daily: number; overtime: number } } } = {}
-      const twentyEightDaysAgo = new Date()
-      twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28)
-
-      workEntries.forEach((entry) => {
-        if (entry.date >= twentyEightDaysAgo) {
-          if (!result[entry.userId]) {
-            result[entry.userId] = {}
-          }
-          if (!result[entry.userId][entry.projectId]) {
-            result[entry.userId][entry.projectId] = { total: 0, daily: 0, overtime: 0 }
-          }
-          result[entry.userId][entry.projectId].total += entry.regularHours + entry.overtimeHours
-          result[entry.userId][entry.projectId].daily += entry.regularHours
-          result[entry.userId][entry.projectId].overtime += entry.overtimeHours
-        }
-      })
-
-      setUserProjects(result)
-    }
-
-    calculateUserProjects()
-  }, [])
-
-  const getTotalHours = (userId: number) => {
-    return Object.values(userProjects[userId] || {}).reduce((sum, hours) => sum + hours.total, 0)
-  }
-
-  const formatHours = (hours: number) => {
-    return parseInt((hours / 28).toFixed(2)) // Promedio diario en los últimos 28 días
-  }
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "personalRotation",
+      {
+        month: selectedMonth + 1,
+        year: selectedYear,
+      },
+      enqueueSnackbar,
+      (data) => setUsers(data),
+    );
+  }, [selectedMonth, selectedYear]);
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -110,10 +76,50 @@ export default function CollaboratorProjectsPage() {
       </header>
 
       <section className="p-4">
+        {/* Añadir selector de mes y año */}
+        <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+                Mes
+              </label>
+              <select
+                id="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="w-full md:w-40 p-2 border rounded"
+              >
+                {months.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                Año
+              </label>
+              <select
+                id="year"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full md:w-32 p-2 border rounded"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         {users.map((user) => (
-          <div key={user.id} className="mb-8 bg-white p-6 rounded-lg shadow-md">
+          <div key={user._id} className="mb-8 bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">
-              {user.name} - {user.role}
+              {user.name} ({months[selectedMonth]} {selectedYear})
             </h2>
             <div className="overflow-x-auto">
               <table className="min-w-full">
@@ -137,15 +143,14 @@ export default function CollaboratorProjectsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(userProjects[user.id] || {}).map(([projectId, hours]) => {
-                    const project = projects.find((p) => p.id === Number.parseInt(projectId))
+                  {user.projects.map((project) => {
                     return (
-                      <tr key={projectId}>
-                        <td className="px-6 py-4 whitespace-nowrap">{project?.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{hours.total} horas</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{formatHours(hours.daily)} horas</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{formatHours(hours.overtime)} horas</td>
-                        <td className="px-6 py-4 whitespace-nowrap">${project?.hourlyRate.toFixed(2)}</td>
+                      <tr key={project.project}>
+                        <td className="px-6 py-4 whitespace-nowrap">{project?.project}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{project.totalHours}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{project.averageDaily}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{project.extraHours}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{project.costPerHour}</td>
                       </tr>
                     )
                   })}
@@ -153,7 +158,7 @@ export default function CollaboratorProjectsPage() {
                 <tfoot>
                   <tr className="bg-gray-100">
                     <td className="px-6 py-4 whitespace-nowrap font-bold">Total</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-bold">{getTotalHours(user.id)} horas</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-bold">{user.total}</td>
                     <td colSpan={3}></td>
                   </tr>
                 </tfoot>
@@ -165,4 +170,3 @@ export default function CollaboratorProjectsPage() {
     </main>
   )
 }
-

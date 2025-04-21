@@ -10,7 +10,7 @@ interface Links {
 const links: Links[] = [
   { name: 'Inicio', url: '/home', icon: '/navbar/home.svg' },
   { name: 'Historial', url: '/home/history', icon: '/navbar/history.svg' },
-  { name: "Pendientes", url: '/home/pending', icon: '/navbar/stats.svg' },
+  { name: "Notificaciones", url: '/home/notificaciones', icon: '/navbar/notifications.svg' },
   { name: "Usuario", url: '/home/user', icon: '/navbar/user.svg' },
 ]
 

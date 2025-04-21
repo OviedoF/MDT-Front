@@ -2,27 +2,22 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { FaSignOutAlt, FaEnvelope, FaProjectDiagram, FaPaperPlane } from "react-icons/fa"
 import { useSnackbar } from "notistack"
+import { makeQuery } from "@/app/utils/api"
 
 interface Project {
-  id: number
+  _id: string
   name: string
 }
-
-const projects: Project[] = [
-  { id: 1, name: "Proyecto A" },
-  { id: 2, name: "Proyecto B" },
-  { id: 3, name: "Proyecto C" },
-  { id: 4, name: "Proyecto D" },
-]
 
 export default function SendProjectEmailPage() {
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
   const [email, setEmail] = useState("")
+  const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<number | "">("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -33,32 +28,38 @@ export default function SendProjectEmailPage() {
       return
     }
 
-    setIsLoading(true)
-
-    try {
-      // Aquí iría la llamada real a tu API
-      const response = await fetch("/api/send-project-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, projectId: selectedProjectId }),
-      })
-
-      if (response.ok) {
-        enqueueSnackbar("Email enviado exitosamente", { variant: "success" })
+    makeQuery(
+      localStorage.getItem("token"),
+      "sendMail",
+      { email, projectId: selectedProjectId },
+      enqueueSnackbar,
+      (response) => {
+        enqueueSnackbar("Email enviado con éxito", { variant: "success" })
         setEmail("")
         setSelectedProjectId("")
-      } else {
-        throw new Error("Error al enviar el email")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      enqueueSnackbar("Error al enviar el email", { variant: "error" })
-    } finally {
-      setIsLoading(false)
-    }
+      },
+      setIsLoading,
+      () => { }
+    )
   }
+
+  const getProjects = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      "getProjects",
+      {},
+      enqueueSnackbar,
+      (response) => {
+        setProjects(response)
+      },
+      setIsLoading,
+      () => { }
+    )
+  }
+
+  useEffect(() => {
+    getProjects()
+  }, [])
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -85,7 +86,7 @@ export default function SendProjectEmailPage() {
                 <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
-                  id="email"
+                  _id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
@@ -103,13 +104,13 @@ export default function SendProjectEmailPage() {
                 <select
                   id="project"
                   value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
                   required
                 >
                   <option value="">Seleccione un proyecto</option>
                   {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
+                    <option key={project._id} value={project._id}>
                       {project.name}
                     </option>
                   ))}

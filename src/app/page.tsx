@@ -2,18 +2,36 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import type React from "react"
-
 import { useState } from "react"
 import { FaEye, FaEyeSlash, FaInfoCircle } from "react-icons/fa"
+import { useSnackbar } from "notistack"
+import { makeQuery } from "./utils/api"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
-    code: "",
+    email: "",
     password: "",
   })
-  const navigate = useRouter().push
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const { enqueueSnackbar } = useSnackbar()
+  const router = useRouter()
+
+  const handleToken = (token: string) => {
+    makeQuery(
+      token,
+      "whoiam",
+      token,
+      enqueueSnackbar,
+      (response: any) => {
+        localStorage.setItem("user", JSON.stringify(response))
+        localStorage.setItem("token", token)
+        enqueueSnackbar("Logeo exitoso", { variant: "success" })
+        router.push("/home")
+      }
+    )
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -22,9 +40,19 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt with:", formData)
-    navigate("/home")
+    setError("")
+
+    makeQuery(
+      null,
+      "login",
+      formData,
+      enqueueSnackbar,
+      (response: any) => handleToken(response),
+      setLoading,
+      (error: any) => {
+        setError(error.response?.data?.error || "Error en el servidor")
+      }
+    )
   }
 
   return (
@@ -60,10 +88,11 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <input
-              name="code"
-              value={formData.code}
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Código de Colaborador"
+              placeholder="Email"
               className="w-full h-12 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green focus:border-transparent"
               required
             />
@@ -86,16 +115,19 @@ export default function LoginPage() {
                 {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
               </button>
             </div>
+
+            {error && <p className="text-red-500 text-sm">{error}</p>}
           </div>
 
           <button
             type="submit"
             className="w-full h-12 bg-green hover:bg-lightgreen text-white rounded-md font-medium transition-colors"
+            disabled={loading}
           >
-            Ingresar
+            {loading ? "Ingresando..." : "Ingresar"}
           </button>
 
-          <Link href={'/recovery-password'} className="bg-lightgreen p-3 rounded-md flex items-start gap-2 text-sm text-white">
+          <Link href={"/recovery-password"} className="bg-lightgreen p-3 rounded-md flex items-start gap-2 text-sm text-white">
             <FaInfoCircle className="h-5 w-5 min-w-5 text-white mt-0.5" />
             <p>Si olvidaste tu contraseña, por favor comunícate al área de sistemas al número 0000-0000</p>
           </Link>
@@ -104,4 +136,3 @@ export default function LoginPage() {
     </main>
   )
 }
-

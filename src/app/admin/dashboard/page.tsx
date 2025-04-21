@@ -18,6 +18,7 @@ const pages = [
   { name: "Costo de proyectos", path: "/admin/dashboard/costo-proyectos", icon: <FaDollarSign className="text-4xl mb-2" /> },
   { name: "Enviar resúmen", path: "/admin/dashboard/enviar-resumen", icon: <FaPaperPlane className="text-4xl mb-2" /> },
   { name: "Aprobar horas extras", path: "/admin/dashboard/aprobar-horas-extras", icon: <FaPlus className="text-4xl mb-2" /> },
+  { name: "Notificaciones", path: "/admin/dashboard/notificaciones", icon: <FaBell className="text-4xl mb-2" /> },
 ]
 
 export default function DashboardPage() {

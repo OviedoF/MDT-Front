@@ -3,39 +3,73 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FaSignOutAlt, FaDollarSign, FaCalendarAlt, FaClock } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
+import { useSnackbar } from "notistack"
 
 interface Project {
-  id: number
-  name: string
-  monthlyCost: number
-  dailyCost: number
-  overtimeHourlyCost: number
+  _id: string
+  projectName: string
+  monthlyCost: string
+  dailyCost: string
+  extraHourCost: string
 }
-
-const projects: Project[] = [
-  { id: 1, name: "Proyecto A", monthlyCost: 15000, dailyCost: 500, overtimeHourlyCost: 75 },
-  { id: 2, name: "Proyecto B", monthlyCost: 22000, dailyCost: 733.33, overtimeHourlyCost: 90 },
-  { id: 3, name: "Proyecto C", monthlyCost: 18000, dailyCost: 600, overtimeHourlyCost: 80 },
-  { id: 4, name: "Proyecto D", monthlyCost: 30000, dailyCost: 1000, overtimeHourlyCost: 100 },
-]
 
 export default function ProjectCostsPage() {
   const router = useRouter()
-  const [selectedProjectId, setSelectedProjectId] = useState<number | "">("")
+  const [selectedProjectId, setSelectedProjectId] = useState<string | "">("")
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
+  const [projects, setProjects] = useState<Project[]>([])
+  const { enqueueSnackbar } = useSnackbar()
+
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ]
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+
+  const getProjects = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      "getProjectCosts",
+      {
+        year: selectedYear,
+        month: selectedMonth,
+      },
+      enqueueSnackbar,
+      (response) => {
+        setProjects(response)
+      },
+      setLoading,
+      () => { }
+    )
+  }
+
+  useEffect(() => {
+    getProjects()
+  }, [selectedYear, selectedMonth])
 
   useEffect(() => {
     if (selectedProjectId !== "") {
-      const project = projects.find((p) => p.id === selectedProjectId)
+      const project = projects.find((p) => p._id === selectedProjectId)
       setSelectedProject(project || null)
     } else {
       setSelectedProject(null)
     }
+    console.log("Selected Project:", selectedProjectId)
   }, [selectedProjectId])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount)
-  }
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -51,17 +85,61 @@ export default function ProjectCostsPage() {
       </header>
 
       <section className="p-4">
+        
+      <div className="bg-white p-6 rounded-lg shadow-md mb-4">
+          <h2 className="text-xl font-bold mb-4 flex items-center">
+            <FaCalendarAlt className="mr-2 text-violet-600" />
+            Seleccionar Período
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                Año
+              </label>
+              <select
+                id="year"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full md:w-32 p-2 border rounded"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+                Mes
+              </label>
+              <select
+                id="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="w-full md:w-40 p-2 border rounded"
+              >
+                {months.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-xl font-bold mb-4">Seleccionar Proyecto</h2>
           <select
             value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
             className="w-full p-2 border rounded"
           >
             <option value="">Seleccione un proyecto</option>
             {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
+              <option key={project._id} value={project._id}>
+                {project.projectName}
               </option>
             ))}
           </select>
@@ -69,22 +147,22 @@ export default function ProjectCostsPage() {
 
         {selectedProject && (
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Detalles de Costos: {selectedProject.name}</h2>
+            <h2 className="text-xl font-bold mb-4">Detalles de Costos: {selectedProject.projectName}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-100 p-4 rounded-lg">
                 <FaDollarSign className="text-blue-500 text-3xl mb-2" />
                 <h3 className="text-lg font-semibold">Costo Mensual</h3>
-                <p className="text-2xl font-bold">{formatCurrency(selectedProject.monthlyCost)}</p>
+                <p className="text-2xl font-bold">{selectedProject.monthlyCost}</p>
               </div>
               <div className="bg-green-100 p-4 rounded-lg">
                 <FaCalendarAlt className="text-green-500 text-3xl mb-2" />
                 <h3 className="text-lg font-semibold">Costo Diario</h3>
-                <p className="text-2xl font-bold">{formatCurrency(selectedProject.dailyCost)}</p>
+                <p className="text-2xl font-bold">{selectedProject.dailyCost}</p>
               </div>
               <div className="bg-yellow-100 p-4 rounded-lg">
                 <FaClock className="text-yellow-500 text-3xl mb-2" />
                 <h3 className="text-lg font-semibold">Costo Hora Extra</h3>
-                <p className="text-2xl font-bold">{formatCurrency(selectedProject.overtimeHourlyCost)}</p>
+                <p className="text-2xl font-bold">{selectedProject.extraHourCost}</p>
               </div>
             </div>
           </div>
@@ -112,11 +190,11 @@ export default function ProjectCostsPage() {
               </thead>
               <tbody>
                 {projects.map((project) => (
-                  <tr key={project.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{project.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(project.monthlyCost)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(project.dailyCost)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(project.overtimeHourlyCost)}</td>
+                  <tr key={project._id}>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.projectName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.monthlyCost}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.dailyCost}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.extraHourCost}</td>
                   </tr>
                 ))}
               </tbody>

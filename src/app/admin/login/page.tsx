@@ -4,21 +4,50 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa"
 import { FiLogIn } from "react-icons/fi"
+import { useSnackbar } from "notistack"
+import {makeQuery} from '../../utils/api'
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const {enqueueSnackbar} = useSnackbar()
+
+  const handleToken = (token: string) => {
+    makeQuery(
+      token,
+      "whoiam",
+      token,
+      enqueueSnackbar,
+      (response: any) => {
+        localStorage.setItem("user", JSON.stringify(response))
+        enqueueSnackbar("Logeo exitoso", { variant: "success" })
+        router.push("/admin/dashboard")
+      }
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (email === "admin@gmail.com" && password === "admin123") {
-      router.push("/admin/dashboard")
-    } else {
-      setError("Email o contraseña incorrectos")
-    }
+    makeQuery(
+      localStorage.getItem("token"),
+      "login",
+      {
+        email,
+        password,
+      },
+      enqueueSnackbar,
+      (response: any) => {
+        return handleToken(response)
+      },
+      setLoading,
+      (error: any) => {
+        setError(error.response?.data?.error || "Error en el servidor")
+      }
+    )
   }
 
   const togglePasswordVisibility = () => {

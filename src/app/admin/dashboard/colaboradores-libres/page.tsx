@@ -1,12 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
 import { FaSignOutAlt, FaUserPlus } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
+import { get } from "http"
+
+interface AvailableUser {
+  name: string
+  availableHours: number
+  role: "colaborador" | "topografo"
+}
+
+interface AssignedUser {
+  name: string
+  availableHours: number
+  role: "colaborador" | "topografo"
+  project: string | null
+}
+
+interface UserData {
+  available: AvailableUser[]
+  assigned: AssignedUser[]
+}
 
 interface User {
-  id: number
+  _id: string
   name: string
   role: "supervisor" | "colaborador" | "topografo"
   assignedProject: number | null
@@ -14,47 +34,72 @@ interface User {
 }
 
 interface Project {
-  id: number
+  _id: string
   name: string
   active: boolean
 }
 
-const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", role: "colaborador", assignedProject: null, availableHours: 40 },
-  { id: 2, name: "María García", role: "colaborador", assignedProject: 1, availableHours: 20 },
-  { id: 3, name: "Carlos López", role: "topografo", assignedProject: null, availableHours: 40 },
-  { id: 4, name: "Ana Rodríguez", role: "topografo", assignedProject: 2, availableHours: 30 },
-  { id: 5, name: "Pedro Sánchez", role: "colaborador", assignedProject: null, availableHours: 40 },
-]
-
-const initialProjects: Project[] = [
-  { id: 1, name: "Proyecto A", active: true },
-  { id: 2, name: "Proyecto B", active: true },
-  { id: 3, name: "Proyecto C", active: false },
-]
-
 export default function AvailableCollaboratorsPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [usersData, setUsersData] = useState<UserData>({
+    assigned: [],
+    available: [],
+  })
+  const [projects, setProjects] = useState<Project[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
-  const availableUsers = users.filter((user) => user.assignedProject === null)
-  const assignedUsers = users.filter((user) => user.assignedProject !== null)
-
   const handleAssignUser = (projectId: number) => {
     if (selectedUser) {
-      const updatedUsers = users.map((user) =>
-        user.id === selectedUser.id ? { ...user, assignedProject: projectId } : user,
+      alert(`Asignando a ${selectedUser._id} al proyecto ${projectId}`)
+      makeQuery(
+        localStorage.getItem("token"),
+        "assignUserToProject",
+        { userId: selectedUser._id, projectId },
+        enqueueSnackbar,
+        (response) => {
+          // Handle success response if needed
+          setIsAssignModalOpen(false)
+          setSelectedUser(null)
+          enqueueSnackbar(`${selectedUser.name} ha sido asignado al proyecto`, { variant: "success" })
+          getProjects()
+          getCollaboratorsStatus()
+        }
       )
-      setUsers(updatedUsers)
-      setIsAssignModalOpen(false)
-      setSelectedUser(null)
-      enqueueSnackbar(`${selectedUser.name} ha sido asignado al proyecto`, { variant: "success" })
     }
   }
+
+  const getProjects = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      "getProjects",
+      {},
+      enqueueSnackbar,
+      (response) => {
+        setProjects(response)
+      },
+      setLoading,
+      () => { }
+    )
+  }
+
+  const getCollaboratorsStatus = () => {
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "getCollaboratorsStatus",
+      "",
+      enqueueSnackbar,
+      (data) => setUsersData(data),
+    );
+  }
+
+  useEffect(() => {
+    getProjects()
+    getCollaboratorsStatus()
+  }, [])
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -78,20 +123,23 @@ export default function AvailableCollaboratorsPage() {
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Nombre
                 </th>
+
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Rol
                 </th>
+
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Horas Disponibles
                 </th>
+
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody>
-              {availableUsers.map((user) => (
-                <tr key={user.id}>
+              {usersData?.available?.map((user) => (
+                <tr key={JSON.stringify(user)}>
                   <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.availableHours}</td>
@@ -133,12 +181,14 @@ export default function AvailableCollaboratorsPage() {
               </tr>
             </thead>
             <tbody>
-              {assignedUsers.map((user) => (
-                <tr key={user.id}>
+              {usersData?.assigned?.map((user) => (
+                <tr key={
+                  JSON.stringify(user)
+                }>
                   <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {projects.find((p) => p.id === user.assignedProject)?.name || "N/A"}
+                    {user.project || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.availableHours}</td>
                 </tr>
@@ -159,8 +209,8 @@ export default function AvailableCollaboratorsPage() {
                 .filter((p) => p.active)
                 .map((project) => (
                   <button
-                    key={project.id}
-                    onClick={() => handleAssignUser(project.id)}
+                    key={project._id}
+                    onClick={() => handleAssignUser(project._id)}
                     className="w-full bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded"
                   >
                     {project.name}

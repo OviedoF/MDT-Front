@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock } from "react-icons/fa"
+import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock, FaCheck } from "react-icons/fa"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
+import { makeQuery } from "@/app/utils/api"
+import { FaXmark } from "react-icons/fa6"
 
 interface WorkingHours {
   startTime: string
@@ -21,13 +23,15 @@ interface WorkSchedule {
 }
 
 interface User {
-  id: number
+  _id: number
   name: string
-  role: "supervisor" | "colaborador" | "topografo"
+  email: string
+  password: string
+  role: "topografo" | "colaborador" | "admin"
 }
 
 interface Project {
-  id: number
+  _id: number
   name: string
   description: string
   supervisor: number
@@ -40,14 +44,8 @@ interface Project {
   endDate: Date | null
   active: boolean
   workSchedule: WorkSchedule
+  workedHours?: number
 }
-
-const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", role: "supervisor" },
-  { id: 2, name: "María García", role: "colaborador" },
-  { id: 3, name: "Carlos López", role: "topografo" },
-  { id: 4, name: "Ana Rodríguez", role: "topografo" },
-]
 
 const defaultWorkSchedule: WorkSchedule = {
   monday: { startTime: "09:00", endTime: "17:00" },
@@ -57,47 +55,14 @@ const defaultWorkSchedule: WorkSchedule = {
   friday: { startTime: "09:00", endTime: "17:00" },
 }
 
-const initialProjects: Project[] = [
-  {
-    id: 1,
-    name: "Proyecto A",
-    description: "Descripción del Proyecto A",
-    supervisor: 1,
-    topographers: [3],
-    collaborators: [2],
-    totalCost: 10000,
-    hourlyRate: 50,
-    billingDate: new Date(),
-    startDate: new Date(),
-    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-    active: true,
-    workSchedule: defaultWorkSchedule,
-  },
-  {
-    id: 2,
-    name: "Proyecto B",
-    description: "Descripción del Proyecto B",
-    supervisor: 1,
-    topographers: [4],
-    collaborators: [2],
-    totalCost: 15000,
-    hourlyRate: 60,
-    billingDate: new Date(),
-    startDate: new Date(),
-    endDate: new Date(new Date().setMonth(new Date().getMonth() + 2)),
-    active: true,
-    workSchedule: defaultWorkSchedule,
-  },
-]
-
 export default function ManageProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<Project[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
-  const [newProject, setNewProject] = useState<Omit<Project, "id" | "active">>({
+  const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
     name: "",
     description: "",
     supervisor: 0,
@@ -110,10 +75,14 @@ export default function ManageProjectsPage() {
     endDate: null,
     workSchedule: defaultWorkSchedule,
   })
+  const [loading, setLoading] = useState(false)
+  const [users, setUsers] = useState<User[]>([])
+  const [toggleActiveModal, setToggleActiveModal] = useState(false)
+  const [toggleDesactiveModal, setToggleDesactiveModal] = useState(false)
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
-  const validateProject = (project: Omit<Project, "id" | "active">) => {
+  const validateProject = (project: Omit<Project, "_id" | "active">) => {
     if (!project.name.trim()) {
       enqueueSnackbar("El nombre del proyecto es obligatorio", { variant: "warning" })
       return false
@@ -171,39 +140,77 @@ export default function ManageProjectsPage() {
 
   const handleCreateProject = () => {
     if (!validateProject(newProject)) return
-    setProjects([...projects, { ...newProject, id: projects.length + 1, active: true }])
-    setIsCreateModalOpen(false)
-    setNewProject({
-      name: "",
-      description: "",
-      supervisor: 0,
-      topographers: [],
-      collaborators: [],
-      totalCost: 0,
-      hourlyRate: 0,
-      billingDate: null,
-      startDate: null,
-      endDate: null,
-      workSchedule: defaultWorkSchedule,
-    })
-    enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
+    makeQuery(
+      localStorage.getItem("token"),
+      "createProject",
+      { ...newProject, active: true },
+      enqueueSnackbar,
+      (response) => {
+        getProjects()
+        setIsCreateModalOpen(false)
+        setNewProject({
+          name: "",
+          description: "",
+          supervisor: 0,
+          topographers: [],
+          collaborators: [],
+          totalCost: 0,
+          hourlyRate: 0,
+          billingDate: null,
+          startDate: null,
+          endDate: null,
+          workSchedule: defaultWorkSchedule,
+        })
+        enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
+      },
+      setLoading,
+      () => {
+        setIsCreateModalOpen(false)
+        enqueueSnackbar("Error al crear el proyecto", { variant: "error" })
+      }
+    )
   }
 
   const handleUpdateProject = () => {
     if (currentProject && validateProject(currentProject)) {
-      setProjects(projects.map((project) => (project.id === currentProject.id ? currentProject : project)))
-      setIsEditModalOpen(false)
-      setCurrentProject(null)
-      enqueueSnackbar("Proyecto actualizado correctamente", { variant: "success" })
+      makeQuery(
+        localStorage.getItem("token"),
+        "updateProject",
+        { ...currentProject, active: true },
+        enqueueSnackbar,
+        (response) => {
+          getProjects()
+          setIsEditModalOpen(false)
+          setCurrentProject(null)
+          enqueueSnackbar("Proyecto actualizado correctamente", { variant: "success" })
+        },
+        setLoading,
+        () => {
+          setIsEditModalOpen(false)
+          enqueueSnackbar("Error al actualizar el proyecto", { variant: "error" })
+        }
+      )
     }
   }
 
   const handleDeleteProject = () => {
     if (currentProject) {
-      setProjects(projects.filter((project) => project.id !== currentProject.id))
-      setIsDeleteModalOpen(false)
-      enqueueSnackbar("Proyecto eliminado", { variant: "error" })
-      setCurrentProject(null)
+      makeQuery(
+        localStorage.getItem("token"),
+        "deleteProject",
+        currentProject._id,
+        enqueueSnackbar,
+        (response) => {
+          getProjects()
+          setIsDeleteModalOpen(false)
+          enqueueSnackbar("Proyecto eliminado correctamente", { variant: "success" })
+        },
+        setLoading,
+        () => {
+          setIsDeleteModalOpen(false)
+          enqueueSnackbar("Error al eliminar el proyecto", { variant: "error" })
+        }
+      )
     }
   }
 
@@ -211,6 +218,82 @@ export default function ManageProjectsPage() {
     setCurrentProject(project)
     setIsReportModalOpen(true)
   }
+
+  const handleActiveProject = () => {
+    if (currentProject) {
+      makeQuery(
+        localStorage.getItem("token"),
+        "updateProject",
+        { ...currentProject, active: true },
+        enqueueSnackbar,
+        (response) => {
+          getProjects()
+          setToggleActiveModal(false)
+          setToggleDesactiveModal(false)
+          setCurrentProject(null)
+          enqueueSnackbar("Proyecto habilitado correctamente", { variant: "success" })
+        },
+        setLoading,
+        () => {
+          setToggleActiveModal(false)
+          enqueueSnackbar("Error al habilitar el proyecto", { variant: "error" })
+        }
+      )
+    }
+  }
+
+  const handleDesactiveProject = () => {
+    if (currentProject) {
+      makeQuery(
+        localStorage.getItem("token"),
+        "updateProject",
+        { ...currentProject, active: false },
+        enqueueSnackbar,
+        (response) => {
+          getProjects()
+          setToggleDesactiveModal(false)
+          setToggleActiveModal(false)
+          setCurrentProject(null)
+          enqueueSnackbar("Proyecto deshabilitado correctamente", { variant: "success" })
+        },
+        setLoading,
+        () => {
+          setToggleDesactiveModal(false)
+          enqueueSnackbar("Error al deshabilitar el proyecto", { variant: "error" })
+        }
+      )
+    }
+  }
+
+  const getProjects = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      "getProjects",
+      {},
+      enqueueSnackbar,
+      (response) => {
+        setProjects(response)
+        console.log(response)
+      },
+      setLoading,
+      () => { }
+    )
+  }
+
+  useEffect(() => {
+    getProjects()
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "getUsers",
+      "",
+      enqueueSnackbar,
+      (data) => setUsers(data),
+    );
+  }, []);
 
   const ProjectForm = ({ project, setProject, isNewProject = false }: any) => {
     const updateWorkSchedule = (day: keyof WorkSchedule, field: keyof WorkingHours, value: string) => {
@@ -228,6 +311,7 @@ export default function ManageProjectsPage() {
 
     return (
       <>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Proyecto</label>
         <input
           type="text"
           placeholder="Nombre del Proyecto"
@@ -235,64 +319,68 @@ export default function ManageProjectsPage() {
           onChange={(e) => setProject({ ...project, name: e.target.value })}
           className="w-full p-2 mb-4 border rounded"
         />
+        <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
         <textarea
           placeholder="Descripción (opcional)"
           value={project.description}
           onChange={(e) => setProject({ ...project, description: e.target.value })}
           className="w-full p-2 mb-4 border rounded"
         />
+        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
         <select
           value={project.supervisor}
-          onChange={(e) => setProject({ ...project, supervisor: Number(e.target.value) })}
+          onChange={(e) => setProject({ ...project, supervisor: e.target.value })}
           className="w-full p-2 mb-4 border rounded"
         >
           <option value={0}>Seleccionar Supervisor</option>
-          {initialUsers
-            .filter((user) => user.role === "supervisor")
+          {users
             .map((user) => (
-              <option key={user.id} value={user.id}>
+              <option key={user._id} value={user._id}>
                 {user.name}
               </option>
             ))}
         </select>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
         <select
           multiple
           value={project.topographers.map(String)}
           onChange={(e) =>
             setProject({
               ...project,
-              topographers: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+              topographers: Array.from(e.target.selectedOptions, (option) => option.value),
             })
           }
           className="w-full p-2 mb-4 border rounded"
         >
-          {initialUsers
+          {users
             .filter((user) => user.role === "topografo")
             .map((user) => (
-              <option key={user.id} value={user.id}>
+              <option key={user._id} value={user._id}>
                 {user.name}
               </option>
             ))}
         </select>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Colaboradores</label>
         <select
           multiple
           value={project.collaborators.map(String)}
           onChange={(e) =>
             setProject({
               ...project,
-              collaborators: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+              collaborators: Array.from(e.target.selectedOptions, (option) => option.value),
             })
           }
           className="w-full p-2 mb-4 border rounded"
         >
-          {initialUsers
+          {users
             .filter((user) => user.role === "colaborador")
             .map((user) => (
-              <option key={user.id} value={user.id}>
+              <option key={user._id} value={user._id}>
                 {user.name}
               </option>
             ))}
         </select>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
         <input
           type="number"
           placeholder="Costo Total del Proyecto"
@@ -302,6 +390,7 @@ export default function ManageProjectsPage() {
           step="0.01"
           className="w-full p-2 mb-4 border rounded"
         />
+        <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
         <input
           type="number"
           placeholder="Costo por Hora"
@@ -311,6 +400,13 @@ export default function ManageProjectsPage() {
           step="0.01"
           className="w-full p-2 mb-4 border rounded"
         />
+
+        {
+          (project.totalCost && project.hourlyRate) && <p className="text-sm text-gray-500 mb-2">
+            Horas totales del proyecto: {project.totalCost / project.hourlyRate} horas
+          </p>
+        }
+
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
           <DatePicker
@@ -420,24 +516,46 @@ export default function ManageProjectsPage() {
                   Fecha Final
                 </th>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody>
               {projects.map((project) => (
-                <tr key={project.id}>
+                <tr key={project._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{project.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {initialUsers.find((user) => user.id === project.supervisor)?.name}
+                    {project.supervisor?.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {project.topographers.map((id) => initialUsers.find((user) => user.id === id)?.name).join(", ")}
+                    {project.topographers.map((topographer) => topographer.name).join(", ")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.totalCost.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.hourlyRate.toFixed(2)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{project.startDate?.toLocaleDateString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{project.endDate?.toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{
+                    new Date(project.startDate).toLocaleDateString("es-ES", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })
+                  }</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{
+                    new Date(project.startDate).toLocaleDateString("es-ES", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })
+                  }</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {project.active ? (
+                      <span className="text-green-600 font-semibold">Activo</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">Inactivo</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => {
@@ -449,19 +567,39 @@ export default function ManageProjectsPage() {
                       <FaEdit />
                     </button>
                     <button
-                      onClick={() => {
-                        setCurrentProject(project)
-                        setIsDeleteModalOpen(true)
-                      }}
-                      className="text-red-600 hover:text-red-900 mr-2"
-                    >
-                      <FaTrash />
-                    </button>
-                    <button
                       onClick={() => handleOpenReportModal(project)}
                       className="text-success hover:text-success"
                     >
                       <FaFileAlt />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentProject(project)
+                        setIsDeleteModalOpen(true)
+                      }}
+                      className="text-red-600 hover:text-red-900 ml-2"
+                    >
+                      <FaTrash />
+                    </button>
+
+                    {/* Botón de deshabilitar y habilitar */}
+                    <button
+                      onClick={() => {
+                        setCurrentProject(project)
+                      }}
+                      className={`${
+                        project.active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"
+                      } ml-2`}
+                    >
+                      {project.active ? (
+                        <span className="text-sm font-semibold">
+                          <FaXmark className="mr-1" onClick={() => setToggleActiveModal(true)} />
+                        </span>
+                      ) : (
+                        <span className="text-sm font-semibold">
+                          <FaCheck className="mr-1" onClick={() => setToggleDesactiveModal(true)} />
+                        </span>
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -547,6 +685,54 @@ export default function ManageProjectsPage() {
         </div>
       )}
 
+      {/* Toggle Active Project Modal */}
+      {toggleActiveModal && currentProject && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Confirmar Deshabilitar</h3>
+            <p>¿Estás seguro de que quieres deshabilitar el proyecto {currentProject.name}?</p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleDesactiveProject}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-2"
+              >
+                Deshabilitar
+              </button>
+              <button
+                onClick={() => setToggleActiveModal(false)}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle Desactive Project Modal */}
+      {toggleDesactiveModal && currentProject && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Confirmar Habilitar</h3>
+            <p>¿Estás seguro de que quieres habilitar el proyecto {currentProject.name}?</p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleActiveProject}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-2"
+              >
+                Habilitar
+              </button>
+              <button
+                onClick={() => setToggleDesactiveModal(false)}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Report Modal */}
       {isReportModalOpen && currentProject && (
         <ProjectReportModal
@@ -573,7 +759,7 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
   const [hoursWorked, setHoursWorked] = useState(120) // Valor de ejemplo
 
   const handleProjectChange = (projectId: number) => {
-    const project = projects.find((p) => p.id === projectId)
+    const project = projects.find((p) => p._id === projectId)
     if (project) {
       setSelectedProject(project)
     }
@@ -597,12 +783,12 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Proyecto</label>
             <select
-              value={selectedProject.id}
+              value={selectedProject._id}
               onChange={(e) => handleProjectChange(Number(e.target.value))}
               className="w-full p-2 border rounded"
             >
               {projects.map((p) => (
-                <option key={p.id} value={p.id}>
+                <option key={p._id} value={p._id}>
                   {p.name}
                 </option>
               ))}
@@ -660,11 +846,11 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
                 </tr>
                 <tr>
                   <td className="py-2 font-semibold">Horas Trabajadas:</td>
-                  <td className="py-2">{hoursWorked} horas</td>
+                  <td className="py-2">{selectedProject.workedHours || 0} horas</td>
                 </tr>
                 <tr className="border-t">
                   <td className="py-2 font-semibold">Total:</td>
-                  <td className="py-2">${(selectedProject.hourlyRate * hoursWorked).toFixed(2)}</td>
+                  <td className="py-2">${(selectedProject.hourlyRate * selectedProject.workedHours).toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>

@@ -1,82 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { FaSignOutAlt, FaInfoCircle, FaCalendarAlt } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
+import { useSnackbar } from "notistack"
 
 interface User {
-  id: number
+  _id: number
   name: string
   role: "colaborador" | "topografo"
-  hourlyRate: number
-  overtimeRate: number
-}
-
-interface Project {
-  id: number
-  name: string
-}
-
-interface WorkEntry {
-  userId: number
-  projectId: number
-  date: Date
   regularHours: number
-  overtimeHours: number
+  extraHours: number
+  totalPay: string
+  details: Detail[]
 }
 
-const users: User[] = [
-  { id: 1, name: "Juan Pérez", role: "colaborador", hourlyRate: 15, overtimeRate: 22.5 },
-  { id: 2, name: "María García", role: "topografo", hourlyRate: 20, overtimeRate: 30 },
-  { id: 3, name: "Carlos López", role: "colaborador", hourlyRate: 15, overtimeRate: 22.5 },
-  { id: 4, name: "Ana Rodríguez", role: "topografo", hourlyRate: 20, overtimeRate: 30 },
-]
-
-const projects: Project[] = [
-  { id: 1, name: "Proyecto A" },
-  { id: 2, name: "Proyecto B" },
-  { id: 3, name: "Proyecto C" },
-]
-
-// Generar datos de ejemplo para el mes actual
-const generateWorkEntries = (): WorkEntry[] => {
-  const entries: WorkEntry[] = []
-  // Generar datos para los últimos 12 meses
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth()
-
-  // Generar datos para los últimos 2 años
-  for (let year = currentYear - 1; year <= currentYear; year++) {
-    for (let month = 0; month < 12; month++) {
-      // Omitir meses futuros
-      if (year === currentYear && month > currentMonth) continue
-
-      const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        // No generar entradas para todos los días para mantener los datos manejables
-        if (day % 3 !== 0) continue // Solo cada 3 días
-
-        users.forEach((user) => {
-          const projectId = Math.floor(Math.random() * projects.length) + 1
-          const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
-          const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
-          entries.push({
-            userId: user.id,
-            projectId,
-            date: new Date(year, month, day),
-            regularHours,
-            overtimeHours,
-          })
-        })
-      }
-    }
-  }
-  return entries
+interface Detail {
+  projectName: string
+  regularHours: number
+  extraHours: number
+  pay: string
 }
-
-const workEntries = generateWorkEntries()
 
 export default function MonthlyPayrollPage() {
   const router = useRouter()
@@ -84,6 +29,9 @@ export default function MonthlyPayrollPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
+  const [users, setUsers] = useState<User[]>([])
+  const { enqueueSnackbar } = useSnackbar()
+  
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
   const months = [
@@ -101,48 +49,24 @@ export default function MonthlyPayrollPage() {
     "Diciembre",
   ]
 
-  const calculateUserSummary = (userId: number) => {
-    const startOfMonth = new Date(selectedYear, selectedMonth, 1)
-    const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0)
-
-    const userEntries = workEntries.filter(
-      (entry) => entry.userId === userId && entry.date >= startOfMonth && entry.date <= endOfMonth,
-    )
-
-    const totalRegularHours = userEntries.reduce((sum, entry) => sum + entry.regularHours, 0)
-    const totalOvertimeHours = userEntries.reduce((sum, entry) => sum + entry.overtimeHours, 0)
-    const user = users.find((u) => u.id === userId)!
-    const regularPay = totalRegularHours * user.hourlyRate
-    const overtimePay = totalOvertimeHours * user.overtimeRate
-    const totalPay = regularPay + overtimePay
-
-    const projectSummary = userEntries.reduce(
-      (acc, entry) => {
-        if (!acc[entry.projectId]) {
-          acc[entry.projectId] = { regularHours: 0, overtimeHours: 0, pay: 0 }
-        }
-        acc[entry.projectId].regularHours += entry.regularHours
-        acc[entry.projectId].overtimeHours += entry.overtimeHours
-        acc[entry.projectId].pay += entry.regularHours * user.hourlyRate + entry.overtimeHours * user.overtimeRate
-        return acc
-      },
-      {} as { [key: number]: { regularHours: number; overtimeHours: number; pay: number } },
-    )
-
-    return {
-      totalRegularHours,
-      totalOvertimeHours,
-      regularPay,
-      overtimePay,
-      totalPay,
-      projectSummary,
-    }
-  }
-
   const openModal = (user: User) => {
     setSelectedUser(user)
     setIsModalOpen(true)
   }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "payrollSummary",
+      {
+        month: selectedMonth,
+        year: selectedYear,
+      },
+      enqueueSnackbar,
+      (data) => setUsers(data),
+    );
+  }, [selectedMonth, selectedYear]);
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -231,14 +155,13 @@ export default function MonthlyPayrollPage() {
               </thead>
               <tbody>
                 {users.map((user) => {
-                  const summary = calculateUserSummary(user.id)
                   return (
-                    <tr key={user.id}>
+                    <tr key={user._id}>
                       <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{summary.totalRegularHours}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{summary.totalOvertimeHours}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">${summary.totalPay.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.regularHours}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.extraHours}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.totalPay}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button onClick={() => openModal(user)} className="text-blue-600 hover:text-blue-900">
                           <FaInfoCircle />
@@ -278,14 +201,14 @@ export default function MonthlyPayrollPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(calculateUserSummary(selectedUser.id).projectSummary).map(([projectId, data]) => (
-                    <tr key={projectId}>
+                  {selectedUser.details.map((detail: Detail) => (
+                    <tr key={detail.projectName}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {projects.find((p) => p.id === Number.parseInt(projectId))?.name}
+                        {detail.projectName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{data.regularHours}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{data.overtimeHours}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">${data.pay.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{detail.regularHours}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{detail.extraHours}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{detail.pay}</td>
                     </tr>
                   ))}
                 </tbody>

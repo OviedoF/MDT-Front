@@ -4,38 +4,51 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
 import { FaUserPlus, FaSignOutAlt } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
 
 interface User {
-  id: number
+  _id: number
   name: string
-  role: "topografo" | "colaborador"
+  email: string
+  password: string
+  role: "topografo" | "colaborador" | "admin"
 }
 
+interface WorkingHours {
+  startTime: string
+  endTime: string
+}
+
+interface WorkSchedule {
+  monday: WorkingHours
+  tuesday: WorkingHours
+  wednesday: WorkingHours
+  thursday: WorkingHours
+  friday: WorkingHours
+}
 interface Project {
-  id: number
+  _id: number
   name: string
   description: string
-  topografo: number
+  supervisor: number
+  topographers: number[]
   collaborators: number[]
+  totalCost: number
+  hourlyRate: number
+  billingDate: Date | null
+  startDate: Date | null
+  endDate: Date | null
+  active: boolean
+  workSchedule: WorkSchedule
+  workedHours?: number
 }
 
-const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", role: "topografo" },
-  { id: 2, name: "María García", role: "colaborador" },
-  { id: 3, name: "Carlos López", role: "colaborador" },
-  { id: 4, name: "Ana Rodríguez", role: "colaborador" },
-]
-
-const initialProjects: Project[] = [
-  { id: 1, name: "Proyecto A", description: "Descripción del Proyecto A", topografo: 1, collaborators: [2] },
-  { id: 2, name: "Proyecto B", description: "Descripción del Proyecto B", topografo: 1, collaborators: [3] },
-]
-
 export default function AddCollaboratorPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
-  const [selectedUser, setSelectedUser] = useState<number>(0)
-  const [selectedProject, setSelectedProject] = useState<number>(0)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedUser, setSelectedUser] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
@@ -43,34 +56,80 @@ export default function AddCollaboratorPage() {
 
   useEffect(() => {
     // Filter out users who are already collaborators or are topografos
-    const availableUsers = users.filter(
-      (user) =>
-        user.role === "colaborador" &&
-        !projects.find((project) => project.id === selectedProject)?.collaborators.includes(user.id),
-    )
-    setAvailableCollaborators(availableUsers)
-  }, [selectedProject, users, projects])
+    let availableUsers = users.filter((user) => user.role === "colaborador")
+
+    if (selectedProject) {
+      availableUsers = availableUsers.filter((user) => {
+        const project = projects.find((project) => project._id === selectedProject)
+        return project && !project.collaborators.some((collaborator) => collaborator === user._id)
+      })
+    }
+
+      setAvailableCollaborators(availableUsers)
+    }, [selectedProject, users, projects])
 
   const handleAddCollaborator = () => {
-    if (selectedUser === 0 || selectedProject === 0) {
+    if (selectedUser === '' || selectedProject === '') {
       enqueueSnackbar("Por favor, selecciona un colaborador y un proyecto", { variant: "warning" })
       return
     }
 
-    const updatedProjects = projects.map((project) => {
-      if (project.id === selectedProject) {
-        return {
-          ...project,
-          collaborators: [...project.collaborators, selectedUser],
-        }
-      }
-      return project
-    })
+    const project = projects.find((project) => project._id === selectedProject)
 
-    setProjects(updatedProjects)
-    enqueueSnackbar("Colaborador añadido exitosamente", { variant: "success" })
-    setSelectedUser(0)
+    if (project?.collaborators.some((collaborator) => collaborator._id === selectedUser)) {
+      enqueueSnackbar("El colaborador ya está asignado a este proyecto", { variant: "warning" })
+      return
+    }
+
+    const newCollaborators = project?.collaborators.map((collaborator) => collaborator._id)
+
+    newCollaborators?.push(selectedUser)
+
+    makeQuery(
+      localStorage.getItem("token"),
+      "updateProject",
+      { ...project, collaborators: newCollaborators },
+      enqueueSnackbar,
+      (response) => {
+        getProjects()
+        enqueueSnackbar("Colaborador añadido al proyecto", { variant: "success" })
+        setSelectedUser('')
+        setSelectedProject('')
+      },
+      setLoading,
+      () => { }
+    )
   }
+
+  const getProjects = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      "getProjects",
+      {},
+      enqueueSnackbar,
+      (response) => {
+        setProjects(response)
+        console.log(response)
+      },
+      setLoading,
+      () => { }
+    )
+  }
+
+  useEffect(() => {
+    getProjects()
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "getUsers",
+      "",
+      enqueueSnackbar,
+      (data) => setUsers(data),
+    );
+  }, []);
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
@@ -94,12 +153,12 @@ export default function AddCollaboratorPage() {
             <select
               id="project"
               value={selectedProject}
-              onChange={(e) => setSelectedProject(Number(e.target.value))}
+              onChange={(e) => setSelectedProject(e.target.value)}
               className="w-full p-2 border rounded"
             >
               <option value={0}>Selecciona un proyecto</option>
               {projects.map((project) => (
-                <option key={project.id} value={project.id}>
+                <option key={project._id} value={project._id}>
                   {project.name}
                 </option>
               ))}
@@ -111,14 +170,14 @@ export default function AddCollaboratorPage() {
               Seleccionar Colaborador
             </label>
             <select
-              id="collaborator"
+              _id="collaborator"
               value={selectedUser}
-              onChange={(e) => setSelectedUser(Number(e.target.value))}
+              onChange={(e) => setSelectedUser(e.target.value)}
               className="w-full p-2 border rounded"
             >
               <option value={0}>Selecciona un colaborador</option>
               {availableCollaborators.map((user) => (
-                <option key={user.id} value={user.id}>
+                <option key={user._id} value={user._id}>
                   {user.name}
                 </option>
               ))}
@@ -134,14 +193,14 @@ export default function AddCollaboratorPage() {
           </button>
         </div>
 
-        {selectedProject !== 0 && (
+        {selectedProject && (
           <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">Colaboradores Actuales</h2>
             <ul className="list-disc pl-5">
               {projects
-                .find((project) => project.id === selectedProject)
-                ?.collaborators.map((collaboratorId) => (
-                  <li key={collaboratorId}>{users.find((user) => user.id === collaboratorId)?.name}</li>
+                .find((project) => project._id === selectedProject)
+                ?.collaborators.map((collaborator) => (
+                  <li key={collaborator._id}>{collaborator?.name}</li>
                 ))}
             </ul>
           </div>

@@ -2,76 +2,105 @@
 
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaClock, FaEdit, FaSignOutAlt, FaTrash, FaUserPlus } from "react-icons/fa"
+import { makeQuery, verifyForm } from "@/app/utils/api"
 
-type UserRole = "topografo" | "colaborador"
+type UserRole = "topografo" | "colaborador" | "admin"
 
 interface User {
-  id: number
+  _id: number
   name: string
   email: string
   password: string
   role: UserRole
+  costPerHour?: number
 }
 
-const initialUsers: User[] = [
-  { id: 1, name: "Juan Pérez", email: "juan@example.com", password: "password123", role: "topografo" },
-  { id: 2, name: "María García", email: "maria@example.com", password: "password456", role: "colaborador" },
-  { id: 3, name: "Carlos López", email: "carlos@example.com", password: "password789", role: "colaborador" },
-]
-
 export default function ManageUsersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
+  const [users, setUsers] = useState<User[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [newUser, setNewUser] = useState<Omit<User, "id">>({ name: "", email: "", password: "", role: "colaborador" })
+  const [newUser, setNewUser] = useState<Omit<User, "_id">>({ name: "", email: "", password: "", role: "colaborador", costPerHour: 0 })
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
   const navigate = useRouter().push;
 
-  const validateUser = (user: Omit<User, "id">) => {
-    if (!user.name.trim()) {
-      enqueueSnackbar("El nombre es obligatorio", { variant: "warning" });
-      return false;
-    }
-    if (!user.email.includes("@")) {
-      enqueueSnackbar("El email no es válido", { variant: "warning" });
-      return false;
-    }
-    if (user.password.length < 6) {
-      enqueueSnackbar("La contraseña debe tener al menos 6 caracteres", { variant: "warning" });
-      return false;
-    }
-    return true;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    makeQuery(
+      token,
+      "getUsers",
+      "",
+      enqueueSnackbar,
+      (data) => setUsers(data),
+    );
+  }, []);
+
+  const handleCreateUser = async () => {
+    const token = localStorage.getItem("token");
+    const requiredFields = ["name", "email", "password", "role", "costPerHour"];
+    const isValid = verifyForm(newUser, requiredFields, enqueueSnackbar);
+    if (!isValid) return;
+
+    makeQuery(
+      token,
+      "createUser",
+      newUser,
+      enqueueSnackbar,
+      (createdUser) => {
+        setUsers((prev) => [...prev, createdUser]);
+        enqueueSnackbar("Usuario creado exitosamente", { variant: "success" });
+        setIsCreateModalOpen(false);
+        setNewUser({ name: "", email: "", password: "", role: "colaborador" });
+      }
+    );
   };
 
-  const handleCreateUser = () => {
-    if (!validateUser(newUser)) return;
-    setUsers([...users, { ...newUser, id: users.length + 1 }]);
-    setIsCreateModalOpen(false);
-    setNewUser({ name: "", email: "", password: "", role: "colaborador" });
-    enqueueSnackbar("Usuario creado exitosamente", { variant: "success" });
+  const handleUpdateUser = async () => {
+    const token = localStorage.getItem("token");
+    if (!currentUser) return;
+
+    const requiredFields = ["name", "email", "role", "costPerHour"];
+    const isValid = verifyForm(currentUser, requiredFields, enqueueSnackbar);
+    if (!isValid) return;
+
+    makeQuery(
+      token,
+      "updateUser",
+      {
+        ...currentUser,
+        password: currentUser.password === users.find((u) => u._id === currentUser._id)?.password ? '' : currentUser.password,
+      },
+      enqueueSnackbar,
+      (updatedUser) => {
+        setUsers(users.map((u) => (u._id === updatedUser._id ? updatedUser : u)));
+        enqueueSnackbar("Usuario actualizado correctamente", { variant: "success" });
+        setIsEditModalOpen(false);
+        setCurrentUser(null);
+      }
+    );
   };
 
-  const handleUpdateUser = () => {
-    if (currentUser && validateUser(currentUser)) {
-      setUsers(users.map((user) => (user.id === currentUser.id ? currentUser : user)));
-      setIsEditModalOpen(false);
-      setCurrentUser(null);
-      enqueueSnackbar("Usuario actualizado correctamente", { variant: "success" });
-    }
-  };
 
-  const handleDeleteUser = () => {
-    if (currentUser) {
-      setUsers(users.filter((user) => user.id !== currentUser.id));
-      setIsDeleteModalOpen(false);
-      enqueueSnackbar("Usuario eliminado", { variant: "error" });
-      setCurrentUser(null);
-    }
+  const handleDeleteUser = async () => {
+    const token = localStorage.getItem("token");
+    if (!currentUser) return;
+
+    makeQuery(
+      token,
+      "deleteUser",
+      currentUser._id,
+      enqueueSnackbar,
+      () => {
+        setUsers(users.filter((u) => u._id !== currentUser._id));
+        enqueueSnackbar("Usuario eliminado", { variant: "success" });
+        setIsDeleteModalOpen(false);
+        setCurrentUser(null);
+      }
+    );
   };
 
   return (
@@ -116,7 +145,7 @@ export default function ManageUsersPage() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id}>
+                <tr key={user._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
@@ -124,7 +153,7 @@ export default function ManageUsersPage() {
 
                     <button
                       onClick={() => {
-                        navigate(`/admin/dashboard/users/horarios/${user.id}`)
+                        navigate(`/admin/dashboard/users/horarios/${user._id}`)
                       }}
                       className="text-blue-600 hover:text-blue-900 mr-2"
                     >
@@ -141,7 +170,7 @@ export default function ManageUsersPage() {
                       <FaEdit />
                     </button>
 
-                    <button
+                    {user.role !== "admin" && <button
                       onClick={() => {
                         setCurrentUser(user)
                         setIsDeleteModalOpen(true)
@@ -149,7 +178,7 @@ export default function ManageUsersPage() {
                       className="text-red-600 hover:text-red-900"
                     >
                       <FaTrash />
-                    </button>
+                    </button>}
                   </td>
                 </tr>
               ))}
@@ -163,6 +192,7 @@ export default function ManageUsersPage() {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full">
             <h3 className="text-lg font-bold mb-4">Crear Usuario</h3>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Nombre</label>
             <input
               type="text"
               placeholder="Nombre"
@@ -170,6 +200,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
               placeholder="Email"
@@ -177,6 +208,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Contraseña</label>
             <input
               type="password"
               placeholder="Contraseña"
@@ -184,6 +216,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Rol</label>
             <select
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value as UserRole })}
@@ -192,6 +225,18 @@ export default function ManageUsersPage() {
               <option value="topografo">Topógrafo</option>
               <option value="colaborador">Colaborador</option>
             </select>
+
+            <div className="mb-4">
+              <label className="block mb-2 text-sm font-medium text-gray-700">Costo por hora</label>
+              <input
+                type="number"
+                placeholder="Costo por hora"
+                value={newUser.costPerHour}
+                onChange={(e) => setNewUser({ ...newUser, costPerHour: parseFloat(e.target.value) })}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
             <div className="flex justify-end">
               <button
                 onClick={handleCreateUser}
@@ -215,6 +260,7 @@ export default function ManageUsersPage() {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full">
             <h3 className="text-lg font-bold mb-4">Editar Usuario</h3>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Nombre</label>
             <input
               type="text"
               placeholder="Nombre"
@@ -222,6 +268,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setCurrentUser({ ...currentUser, name: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
               placeholder="Email"
@@ -229,6 +276,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Contraseña (dejar igual en caso de no cambiar)</label>
             <input
               type="password"
               placeholder="Contraseña"
@@ -236,6 +284,7 @@ export default function ManageUsersPage() {
               onChange={(e) => setCurrentUser({ ...currentUser, password: e.target.value })}
               className="w-full p-2 mb-4 border rounded"
             />
+            <label className="block mb-2 text-sm font-medium text-gray-700">Rol</label>
             <select
               value={currentUser.role}
               onChange={(e) => setCurrentUser({ ...currentUser, role: e.target.value as UserRole })}
@@ -244,6 +293,18 @@ export default function ManageUsersPage() {
               <option value="topografo">Topógrafo</option>
               <option value="colaborador">Colaborador</option>
             </select>
+
+            <div className="mb-4">
+              <label className="block mb-2 text-sm font-medium text-gray-700">Costo por hora</label>
+              <input
+                type="number"
+                placeholder="Costo por hora"
+                value={currentUser.costPerHour}
+                onChange={(e) => setCurrentUser({ ...currentUser, costPerHour: parseFloat(e.target.value) })}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
             <div className="flex justify-end">
               <button
                 onClick={handleUpdateUser}

@@ -30,22 +30,16 @@ export default function ProfilePage() {
       {/* Main Menu */}
       <div className="px-10 mt-4 space-y-3">
         <Link
-          href="/home"
-          className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
-        >
-          Proyectos
-        </Link>
-        <Link
           href="/home/request-hours"
           className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
         >
           Solicitar horas
         </Link>
         <Link
-          href="/home/history"
+          href="/home/control"
           className="block bg-[#F2F2F2] hover:bg-gray-200 transition-colors rounded-lg py-3 px-4 text-center text-gray-800"
         >
-          Historial
+          Control de horarios
         </Link>
       </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
 import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock, FaCheck } from "react-icons/fa"
@@ -34,14 +34,14 @@ interface Project {
   _id: string
   name: string
   description: string
-  supervisor: User
-  topographers: number[]
-  collaborators: number[]
+  supervisor: any
+  topographers: any[]
+  collaborators: any[]
   totalCost: number
   hourlyRate: number
-  billingDate: Date | string
-  startDate: Date | string
-  endDate: Date | string
+  billingDate: any | string
+  startDate: any | string
+  endDate: any | string
   active: boolean
   workSchedule: WorkSchedule
   workedHours: number
@@ -61,7 +61,30 @@ export default function ManageProjectsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [currentProject, setCurrentProject] = useState<Project | null>(null)
+  const [currentProject, setCurrentProject] = useState<Project>(
+    {
+      _id: "",
+      name: "",
+      description: "",
+      supervisor: {
+        _id: "",
+        name: "",
+        email: "",
+        password: "",
+        role: "admin",
+      },
+      topographers: [],
+      collaborators: [],
+      totalCost: 0,
+      hourlyRate: 0,
+      billingDate: new Date(),
+      startDate: new Date(),
+      endDate: new Date(),
+      active: true,
+      workedHours: 0,
+      workSchedule: defaultWorkSchedule,
+    }
+  )
   const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
     name: "",
     description: "",
@@ -87,6 +110,18 @@ export default function ManageProjectsPage() {
   const [toggleActiveModal, setToggleActiveModal] = useState(false)
   const [toggleDesactiveModal, setToggleDesactiveModal] = useState(false)
   const router = useRouter()
+  const inputsRef = {
+    name: useRef(null),
+    description: useRef(null),
+    supervisor: useRef(null),
+    topographers: useRef(null),
+    collaborators: useRef(null),
+    totalCost: useRef(null),
+    hourlyRate: useRef(null),
+    billingDate: useRef(null),
+    startDate: useRef(null),
+    endDate: useRef(null),
+  }
   const { enqueueSnackbar } = useSnackbar()
 
   const validateProject = (project: Omit<Project, "_id" | "active">) => {
@@ -158,7 +193,7 @@ export default function ManageProjectsPage() {
         setNewProject({
           name: "",
           description: "",
-          supervisor:  {
+          supervisor: {
             _id: "",
             name: "",
             email: "",
@@ -186,7 +221,7 @@ export default function ManageProjectsPage() {
   }
 
   const handleUpdateProject = () => {
-    if (currentProject && validateProject(currentProject)) {
+    if (currentProject._id && validateProject(currentProject)) {
       makeQuery(
         localStorage.getItem("token"),
         "updateProject",
@@ -195,7 +230,28 @@ export default function ManageProjectsPage() {
         (response) => {
           getProjects()
           setIsEditModalOpen(false)
-          setCurrentProject(null)
+          setCurrentProject({
+            _id: "",
+            name: "",
+            description: "",
+            supervisor: {
+              _id: "",
+              name: "",
+              email: "",
+              password: "",
+              role: "admin",
+            },
+            topographers: [],
+            collaborators: [],
+            totalCost: 0,
+            hourlyRate: 0,
+            billingDate: new Date(),
+            startDate: new Date(),
+            endDate: new Date(),
+            active: true,
+            workedHours: 0,
+            workSchedule: defaultWorkSchedule,
+          })
           enqueueSnackbar("Proyecto actualizado correctamente", { variant: "success" })
         },
         setLoading,
@@ -208,7 +264,7 @@ export default function ManageProjectsPage() {
   }
 
   const handleDeleteProject = () => {
-    if (currentProject) {
+    if (currentProject._id) {
       makeQuery(
         localStorage.getItem("token"),
         "deleteProject",
@@ -234,7 +290,7 @@ export default function ManageProjectsPage() {
   }
 
   const handleActiveProject = () => {
-    if (currentProject) {
+    if (currentProject._id) {
       makeQuery(
         localStorage.getItem("token"),
         "updateProject",
@@ -244,7 +300,28 @@ export default function ManageProjectsPage() {
           getProjects()
           setToggleActiveModal(false)
           setToggleDesactiveModal(false)
-          setCurrentProject(null)
+          setCurrentProject({
+            _id: "",
+            name: "",
+            description: "",
+            supervisor: {
+              _id: "",
+              name: "",
+              email: "",
+              password: "",
+              role: "admin",
+            },
+            topographers: [],
+            collaborators: [],
+            totalCost: 0,
+            hourlyRate: 0,
+            billingDate: new Date(),
+            startDate: new Date(),
+            endDate: new Date(),
+            active: true,
+            workedHours: 0,
+            workSchedule: defaultWorkSchedule,
+          })
           enqueueSnackbar("Proyecto habilitado correctamente", { variant: "success" })
         },
         setLoading,
@@ -257,7 +334,7 @@ export default function ManageProjectsPage() {
   }
 
   const handleDesactiveProject = () => {
-    if (currentProject) {
+    if (currentProject._id) {
       makeQuery(
         localStorage.getItem("token"),
         "updateProject",
@@ -267,7 +344,28 @@ export default function ManageProjectsPage() {
           getProjects()
           setToggleDesactiveModal(false)
           setToggleActiveModal(false)
-          setCurrentProject(null)
+          setCurrentProject({
+            _id: "",
+            name: "",
+            description: "",
+            supervisor: {
+              _id: "",
+              name: "",
+              email: "",
+              password: "",
+              role: "admin",
+            },
+            topographers: [],
+            collaborators: [],
+            totalCost: 0,
+            hourlyRate: 0,
+            billingDate: new Date(),
+            startDate: new Date(),
+            endDate: new Date(),
+            active: true,
+            workedHours: 0,
+            workSchedule: defaultWorkSchedule,
+          })
           enqueueSnackbar("Proyecto deshabilitado correctamente", { variant: "success" })
         },
         setLoading,
@@ -309,177 +407,30 @@ export default function ManageProjectsPage() {
     );
   }, []);
 
-  const ProjectForm = ({ project, setProject, isNewProject = false }: any) => {
-    const updateWorkSchedule = (day: keyof WorkSchedule, field: keyof WorkingHours, value: string) => {
-      setProject({
-        ...project,
-        workSchedule: {
-          ...project.workSchedule,
-          [day]: {
-            ...project.workSchedule[day],
-            [field]: value,
-          },
+  const updateWorkScheduleNew = (day: keyof WorkSchedule, field: keyof WorkingHours, value: string) => {
+    setNewProject({
+      ...newProject,
+      workSchedule: {
+        ...newProject.workSchedule,
+        [day]: {
+          ...newProject.workSchedule[day],
+          [field]: value,
         },
-      })
-    }
+      },
+    })
+  }
 
-    return (
-      <>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Proyecto</label>
-        <input
-          type="text"
-          placeholder="Nombre del Proyecto"
-          value={project.name}
-          onChange={(e) => setProject({ ...project, name: e.target.value })}
-          className="w-full p-2 mb-4 border rounded"
-        />
-        <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-        <textarea
-          placeholder="Descripción (opcional)"
-          value={project.description}
-          onChange={(e) => setProject({ ...project, description: e.target.value })}
-          className="w-full p-2 mb-4 border rounded"
-        />
-        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
-        <select
-          value={project.supervisor}
-          onChange={(e) => setProject({ ...project, supervisor: e.target.value })}
-          className="w-full p-2 mb-4 border rounded"
-        >
-          <option value={0}>Seleccionar Supervisor</option>
-          {users
-            .map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-        </select>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
-        <select
-          multiple
-          value={project.topographers.map(String)}
-          onChange={(e) =>
-            setProject({
-              ...project,
-              topographers: Array.from(e.target.selectedOptions, (option) => option.value),
-            })
-          }
-          className="w-full p-2 mb-4 border rounded"
-        >
-          {users
-            .filter((user) => user.role === "topografo")
-            .map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-        </select>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Colaboradores</label>
-        <select
-          multiple
-          value={project.collaborators.map(String)}
-          onChange={(e) =>
-            setProject({
-              ...project,
-              collaborators: Array.from(e.target.selectedOptions, (option) => option.value),
-            })
-          }
-          className="w-full p-2 mb-4 border rounded"
-        >
-          {users
-            .filter((user) => user.role === "colaborador")
-            .map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-        </select>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
-        <input
-          type="number"
-          placeholder="Costo Total del Proyecto"
-          value={project.totalCost}
-          onChange={(e) => setProject({ ...project, totalCost: Math.max(0, Number(e.target.value)) })}
-          min="0"
-          step="0.01"
-          className="w-full p-2 mb-4 border rounded"
-        />
-        <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
-        <input
-          type="number"
-          placeholder="Costo por Hora"
-          value={project.hourlyRate}
-          onChange={(e) => setProject({ ...project, hourlyRate: Math.max(0, Number(e.target.value)) })}
-          min="0"
-          step="0.01"
-          className="w-full p-2 mb-4 border rounded"
-        />
-
-        {
-          (project.totalCost && project.hourlyRate) && <p className="text-sm text-gray-500 mb-2">
-            Horas totales del proyecto: {project.totalCost / project.hourlyRate} horas
-          </p>
-        }
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
-          <DatePicker
-            selected={project.billingDate}
-            onChange={(date: any) => setProject({ ...project, billingDate: date })}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
-          <DatePicker
-            selected={project.startDate}
-            onChange={(date: any) => setProject({ ...project, startDate: date })}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
-          <DatePicker
-            selected={project.endDate}
-            onChange={(date: any) => setProject({ ...project, endDate: date })}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        <div className="mb-4">
-          <h4 className="text-md font-semibold mb-2 flex items-center">
-            <FaClock className="mr-2" /> Horario de Trabajo Normal
-          </h4>
-          <p className="text-sm text-gray-500 mb-2">
-            Defina el horario normal de trabajo para cada día. Las horas fuera de este horario se considerarán como
-            horas extra.
-          </p>
-
-          <div className="space-y-3">
-            {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
-              <div key={day} className="flex items-center">
-                <span className="w-24 font-medium">{getDayName(day)}:</span>
-                <div className="flex items-center">
-                  <input
-                    type="time"
-                    value={project.workSchedule[day].startTime}
-                    onChange={(e) => updateWorkSchedule(day, "startTime", e.target.value)}
-                    className="p-2 border rounded mr-2"
-                  />
-                  <span>a</span>
-                  <input
-                    type="time"
-                    value={project.workSchedule[day].endTime}
-                    onChange={(e) => updateWorkSchedule(day, "endTime", e.target.value)}
-                    className="p-2 border rounded ml-2"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </>
-    )
+  const updateWorkScheduleEdit = (day: keyof WorkSchedule, field: keyof WorkingHours, value: string) => {
+    setCurrentProject({
+      ...currentProject,
+      workSchedule: {
+        ...currentProject.workSchedule,
+        [day]: {
+          ...currentProject.workSchedule[day],
+          [field]: value,
+        },
+      },
+    })
   }
 
   return (
@@ -545,7 +496,7 @@ export default function ManageProjectsPage() {
                     {project.supervisor?.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {project.topographers.map((topographer:any) => topographer.name).join(", ")}
+                    {project.topographers.map((topographer: any) => topographer.name).join(", ")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.totalCost.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.hourlyRate.toFixed(2)}</td>
@@ -601,9 +552,8 @@ export default function ManageProjectsPage() {
                       onClick={() => {
                         setCurrentProject(project)
                       }}
-                      className={`${
-                        project.active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"
-                      } ml-2`}
+                      className={`${project.active ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"
+                        } ml-2`}
                     >
                       {project.active ? (
                         <span className="text-sm font-semibold">
@@ -629,7 +579,164 @@ export default function ManageProjectsPage() {
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Crear Proyecto</h3>
             <div className="max-h-[70vh] overflow-y-auto pr-2">
-              <ProjectForm project={newProject} setProject={setNewProject} isNewProject={true} />
+              <>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Proyecto</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del Proyecto"
+                  value={newProject.name}
+                  onChange={(e) => {
+                    setNewProject({ ...newProject, name: e.target.value })
+                  }}
+                  className="w-full p-2 mb-4 border rounded"
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                <textarea
+                  placeholder="Descripción (opcional)"
+                  value={newProject.description}
+                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
+                <select
+                  value={newProject.supervisor}
+                  onChange={(e) => setNewProject({ ...newProject, supervisor: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  <option value={0}>Seleccionar Supervisor</option>
+                  {users
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
+                <select
+                  multiple
+                  value={newProject.topographers.map(String)}
+                  onChange={(e) =>
+                    setNewProject({
+                      ...newProject,
+                      topographers: Array.from(e.target.selectedOptions, (option) => option.value),
+                    })
+                  }
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  {users
+                    .filter((user) => user.role === "topografo")
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Colaboradores</label>
+                <select
+                  multiple
+                  value={newProject.collaborators.map(String)}
+                  onChange={(e) =>
+                    setNewProject({
+                      ...newProject,
+                      collaborators: Array.from(e.target.selectedOptions, (option) => option.value),
+                    })
+                  }
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  {users
+                    .filter((user) => user.role === "colaborador")
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
+                <input
+                  type="number"
+                  placeholder="Costo Total del Proyecto"
+                  value={newProject.totalCost}
+                  onChange={(e) => setNewProject({ ...newProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                  min="0"
+                  step="0.01"
+                  className="w-full p-2 mb-4 border rounded"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
+                <input
+                  type="number"
+                  placeholder="Costo por Hora"
+                  value={newProject.hourlyRate}
+                  onChange={(e) => setNewProject({ ...newProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                  min="0"
+                  step="0.01"
+                  className="w-full p-2 mb-4 border rounded"
+                />
+
+                {
+                  (newProject.totalCost && newProject.hourlyRate) && <p className="text-sm text-gray-500 mb-2">
+                    Horas totales del proyecto: {newProject.totalCost / newProject.hourlyRate} horas
+                  </p>
+                }
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
+                  <DatePicker
+                    selected={newProject.billingDate}
+                    onChange={(date: any) => setNewProject({ ...newProject, billingDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+                  <DatePicker
+                    selected={newProject.startDate}
+                    onChange={(date: any) => setNewProject({ ...newProject, startDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
+                  <DatePicker
+                    selected={newProject.endDate}
+                    onChange={(date: any) => setNewProject({ ...newProject, endDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2 flex items-center">
+                    <FaClock className="mr-2" /> Horario de Trabajo Normal
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Defina el horario normal de trabajo para cada día. Las horas fuera de este horario se considerarán como
+                    horas extra.
+                  </p>
+
+                  <div className="space-y-3">
+                    {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
+                      <div key={day} className="flex items-center">
+                        <span className="w-24 font-medium">{getDayName(day)}:</span>
+                        <div className="flex items-center">
+                          <input
+                            type="time"
+                            value={newProject.workSchedule[day].startTime}
+                            onChange={(e) => updateWorkScheduleNew(day, "startTime", e.target.value)}
+                            className="p-2 border rounded mr-2"
+                          />
+                          <span>a</span>
+                          <input
+                            type="time"
+                            value={newProject.workSchedule[day].endTime}
+                            onChange={(e) => updateWorkScheduleNew(day, "endTime", e.target.value)}
+                            className="p-2 border rounded ml-2"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             </div>
             <div className="flex justify-end mt-4">
               <button
@@ -650,12 +757,169 @@ export default function ManageProjectsPage() {
       )}
 
       {/* Edit Project Modal */}
-      {isEditModalOpen && currentProject && (
+      {isEditModalOpen && currentProject._id && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Editar Proyecto</h3>
             <div className="max-h-[70vh] overflow-y-auto pr-2">
-              <ProjectForm project={currentProject} setProject={setCurrentProject} />
+              <>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Proyecto</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del Proyecto"
+                  value={currentProject.name}
+                  onChange={(e) => {
+                    setCurrentProject({ ...currentProject, name: e.target.value })
+                  }}
+                  className="w-full p-2 mb-4 border rounded"
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                <textarea
+                  placeholder="Descripción (opcional)"
+                  value={currentProject.description}
+                  onChange={(e) => setCurrentProject({ ...currentProject, description: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
+                <select
+                  value={currentProject.supervisor}
+                  onChange={(e) => setCurrentProject({ ...currentProject, supervisor: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  <option value={0}>Seleccionar Supervisor</option>
+                  {users
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
+                <select
+                  multiple
+                  value={currentProject.topographers.map(String)}
+                  onChange={(e) =>
+                    setCurrentProject({
+                      ...currentProject,
+                      topographers: Array.from(e.target.selectedOptions, (option) => option.value),
+                    })
+                  }
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  {users
+                    .filter((user) => user.role === "topografo")
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Colaboradores</label>
+                <select
+                  multiple
+                  value={currentProject.collaborators.map(String)}
+                  onChange={(e) =>
+                    setCurrentProject({
+                      ...currentProject,
+                      collaborators: Array.from(e.target.selectedOptions, (option) => option.value),
+                    })
+                  }
+                  className="w-full p-2 mb-4 border rounded"
+                >
+                  {users
+                    .filter((user) => user.role === "colaborador")
+                    .map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
+                <input
+                  type="number"
+                  placeholder="Costo Total del Proyecto"
+                  value={currentProject.totalCost}
+                  onChange={(e) => setCurrentProject({ ...currentProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                  min="0"
+                  step="0.01"
+                  className="w-full p-2 mb-4 border rounded"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
+                <input
+                  type="number"
+                  placeholder="Costo por Hora"
+                  value={currentProject.hourlyRate}
+                  onChange={(e) => setCurrentProject({ ...currentProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                  min="0"
+                  step="0.01"
+                  className="w-full p-2 mb-4 border rounded"
+                />
+
+                {
+                  (currentProject.totalCost && currentProject.hourlyRate) && <p className="text-sm text-gray-500 mb-2">
+                    Horas totales del proyecto: {currentProject.totalCost / currentProject.hourlyRate} horas
+                  </p>
+                }
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Facturación</label>
+                  <DatePicker
+                    selected={currentProject.billingDate}
+                    onChange={(date: any) => setCurrentProject({ ...currentProject, billingDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+                  <DatePicker
+                    selected={currentProject.startDate}
+                    onChange={(date: any) => setCurrentProject({ ...currentProject, startDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Final</label>
+                  <DatePicker
+                    selected={currentProject.endDate}
+                    onChange={(date: any) => setCurrentProject({ ...currentProject, endDate: date })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2 flex items-center">
+                    <FaClock className="mr-2" /> Horario de Trabajo Normal
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Defina el horario normal de trabajo para cada día. Las horas fuera de este horario se considerarán como
+                    horas extra.
+                  </p>
+
+                  <div className="space-y-3">
+                    {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
+                      <div key={day} className="flex items-center">
+                        <span className="w-24 font-medium">{getDayName(day)}:</span>
+                        <div className="flex items-center">
+                          <input
+                            type="time"
+                            value={currentProject.workSchedule[day].startTime}
+                            onChange={(e) => updateWorkScheduleEdit(day, "startTime", e.target.value)}
+                            className="p-2 border rounded mr-2"
+                          />
+                          <span>a</span>
+                          <input
+                            type="time"
+                            value={currentProject.workSchedule[day].endTime}
+                            onChange={(e) => updateWorkScheduleEdit(day, "endTime", e.target.value)}
+                            className="p-2 border rounded ml-2"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             </div>
             <div className="flex justify-end mt-4">
               <button
@@ -676,7 +940,7 @@ export default function ManageProjectsPage() {
       )}
 
       {/* Delete Project Modal */}
-      {isDeleteModalOpen && currentProject && (
+      {isDeleteModalOpen && currentProject._id && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Confirmar Eliminación</h3>
@@ -700,7 +964,7 @@ export default function ManageProjectsPage() {
       )}
 
       {/* Toggle Active Project Modal */}
-      {toggleActiveModal && currentProject && (
+      {toggleActiveModal && currentProject._id && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Confirmar Deshabilitar</h3>
@@ -724,7 +988,7 @@ export default function ManageProjectsPage() {
       )}
 
       {/* Toggle Desactive Project Modal */}
-      {toggleDesactiveModal && currentProject && (
+      {toggleDesactiveModal && currentProject._id && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
           <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Confirmar Habilitar</h3>
@@ -748,7 +1012,7 @@ export default function ManageProjectsPage() {
       )}
 
       {/* Report Modal */}
-      {isReportModalOpen && currentProject && (
+      {isReportModalOpen && currentProject._id && (
         <ProjectReportModal
           project={currentProject}
           onClose={() => setIsReportModalOpen(false)}
@@ -773,7 +1037,7 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
   const [hoursWorked, setHoursWorked] = useState(120) // Valor de ejemplo
 
   const handleProjectChange = (projectId: number) => {
-    const project = projects.find((p:any) => p._id === projectId)
+    const project = projects.find((p: any) => p._id === projectId)
     if (project) {
       setSelectedProject(project)
     }
@@ -912,4 +1176,3 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
     </div>
   )
 }
-

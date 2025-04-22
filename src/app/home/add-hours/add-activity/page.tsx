@@ -52,7 +52,7 @@ function Content() {
     const date = searchParams.get("date")
 
     const filteredCollaborators = form.collaborators.filter((collab) =>
-        collab.name.toLowerCase().includes(searchQuery.toLowerCase()) || collab.initials.toLowerCase().includes(searchQuery.toLowerCase())
+        collab.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     useEffect(() => {
@@ -340,6 +340,12 @@ function Content() {
                         <button className="w-full border border-gray-300 font-bold rounded-lg p-3 text-[#6A8D73]" onClick={
                             () => setTopographerSignature(true)
                         }>Firma Aquí</button>
+                        {form.topographerSignature && (
+                            <div className="w-full  rounded-lg mt-2 flex items-center justify-center">
+                                <FaCheck className="w-5 h-5 text-green-500 mr-2" />
+                                <span className="text-gray-500 text-sm">Firma guardada</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">
@@ -358,6 +364,12 @@ function Content() {
                         <button className="w-full border border-gray-300 rounded-lg p-3 font-bold text-[#6A8D73]" onClick={
                             () => setSupervisorSignature(true)
                         }>Firmar Ahora</button>
+                        {form.supervisorSignature && (
+                            <div className="w-full  rounded-lg mt-2 flex items-center justify-center">
+                                <FaCheck className="w-5 h-5 text-green-500 mr-2" />
+                                <span className="text-gray-500 text-sm">Firma guardada</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -396,30 +408,30 @@ function Content() {
 
     return (
 
-            <UserPage>
-                <div className=" bg-white p-4">
-                    <div className="max-w-md mx-auto py-6">{renderCurrentStep()}</div>
+        <UserPage>
+            <div className=" bg-white p-4">
+                <div className="max-w-md mx-auto py-6">{renderCurrentStep()}</div>
 
-                    {topographerSignature && <SignatureModal isOpen={topographerSignature} onClose={() => setTopographerSignature(false)} onSave={(data) => setForm({
-                        ...form,
-                        topographerSignature: data,
-                    })} title="Firma del Topógrafo" />}
+                {topographerSignature && <SignatureModal isOpen={topographerSignature} onClose={() => setTopographerSignature(false)} onSave={(data) => setForm({
+                    ...form,
+                    topographerSignature: data,
+                })} title="Firma del Topógrafo" />}
 
-                    {supervisorSignature && <SignatureModal isOpen={supervisorSignature} onClose={() => setSupervisorSignature(false)} onSave={(data) => setForm({
-                        ...form,
-                        supervisorSignature: data,
-                    })} title="Firma del Supervisor" />}
-                </div>
-            </UserPage>
+                {supervisorSignature && <SignatureModal isOpen={supervisorSignature} onClose={() => setSupervisorSignature(false)} onSave={(data) => setForm({
+                    ...form,
+                    supervisorSignature: data,
+                })} title="Firma del Supervisor" />}
+            </div>
+        </UserPage>
     )
 }
 
 
 export default function Page() {
-  return (
-    <Suspense>
-      <Content />
-    </Suspense>
-  )
+    return (
+        <Suspense>
+            <Content />
+        </Suspense>
+    )
 }
 

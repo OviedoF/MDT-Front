@@ -23,7 +23,7 @@ interface WorkSchedule {
 }
 
 interface User {
-  _id: number
+  _id: string
   name: string
   email: string
   password: string
@@ -31,20 +31,20 @@ interface User {
 }
 
 interface Project {
-  _id: number
+  _id: string
   name: string
   description: string
-  supervisor: number
+  supervisor: User
   topographers: number[]
   collaborators: number[]
   totalCost: number
   hourlyRate: number
-  billingDate: Date | null
-  startDate: Date | null
-  endDate: Date | null
+  billingDate: Date | string
+  startDate: Date | string
+  endDate: Date | string
   active: boolean
   workSchedule: WorkSchedule
-  workedHours?: number
+  workedHours: number
 }
 
 const defaultWorkSchedule: WorkSchedule = {
@@ -65,14 +65,21 @@ export default function ManageProjectsPage() {
   const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
     name: "",
     description: "",
-    supervisor: 0,
+    supervisor: {
+      _id: "",
+      name: "",
+      email: "",
+      password: "",
+      role: "admin",
+    },
     topographers: [],
     collaborators: [],
     totalCost: 0,
     hourlyRate: 0,
-    billingDate: null,
-    startDate: null,
-    endDate: null,
+    billingDate: new Date(),
+    startDate: new Date(),
+    endDate: new Date(),
+    workedHours: 0,
     workSchedule: defaultWorkSchedule,
   })
   const [loading, setLoading] = useState(false)
@@ -87,7 +94,7 @@ export default function ManageProjectsPage() {
       enqueueSnackbar("El nombre del proyecto es obligatorio", { variant: "warning" })
       return false
     }
-    if (project.supervisor === 0) {
+    if (project.supervisor._id === "") {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
       return false
     }
@@ -151,14 +158,21 @@ export default function ManageProjectsPage() {
         setNewProject({
           name: "",
           description: "",
-          supervisor: 0,
+          supervisor:  {
+            _id: "",
+            name: "",
+            email: "",
+            password: "",
+            role: "admin",
+          },
           topographers: [],
           collaborators: [],
           totalCost: 0,
           hourlyRate: 0,
-          billingDate: null,
-          startDate: null,
-          endDate: null,
+          billingDate: new Date(),
+          startDate: new Date(),
+          endDate: new Date(),
+          workedHours: 0,
           workSchedule: defaultWorkSchedule,
         })
         enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
@@ -531,7 +545,7 @@ export default function ManageProjectsPage() {
                     {project.supervisor?.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {project.topographers.map((topographer) => topographer.name).join(", ")}
+                    {project.topographers.map((topographer:any) => topographer.name).join(", ")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.totalCost.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">${project.hourlyRate.toFixed(2)}</td>
@@ -759,7 +773,7 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
   const [hoursWorked, setHoursWorked] = useState(120) // Valor de ejemplo
 
   const handleProjectChange = (projectId: number) => {
-    const project = projects.find((p) => p._id === projectId)
+    const project = projects.find((p:any) => p._id === projectId)
     if (project) {
       setSelectedProject(project)
     }

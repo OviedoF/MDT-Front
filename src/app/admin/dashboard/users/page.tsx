@@ -9,7 +9,7 @@ import { makeQuery, verifyForm } from "@/app/utils/api"
 type UserRole = "topografo" | "colaborador" | "admin"
 
 interface User {
-  _id: number
+  _id: string
   name: string
   email: string
   password: string

@@ -19,8 +19,8 @@ interface Project {
 
 interface Notification {
   _id: string
-  user: string
-  project: string | null
+  user: User
+  project: Project
   title: string
   message: string
   createdAt: Date
@@ -29,7 +29,7 @@ interface Notification {
 export default function NotificationsPage() {
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
-  const [selectedUser, setSelectedUser] = useState<string>(0)
+  const [selectedUser, setSelectedUser] = useState<string>('')
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
@@ -41,12 +41,12 @@ export default function NotificationsPage() {
 
   const handleCreateNotification = () => {
     // Validar campos
-    if (selectedUser === 0) {
+    if (selectedUser === '') {
       enqueueSnackbar("Por favor, selecciona un usuario", { variant: "warning" })
       return
     }
 
-    if (selectedProject === 0) {
+    if (selectedProject === '') {
       enqueueSnackbar("Por favor, selecciona un proyecto", { variant: "warning" })
       return
     }
@@ -83,13 +83,13 @@ export default function NotificationsPage() {
   }
 
   const resetForm = () => {
-    setSelectedUser(0)
+    setSelectedUser('')
     setSelectedProject(null)
     setTitle("")
     setMessage("")
   }
 
-  const handleDeleteNotification = (_id: number) => {
+  const handleDeleteNotification = (_id: string) => {
     makeQuery(
       localStorage.getItem("token"),
       "deleteNotification",
@@ -272,7 +272,7 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setIsPreviewOpen(true)}
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded flex items-center"
-                  disabled={!title || !message || selectedUser === 0}
+                  disabled={!title || !message || selectedUser === ''}
                 >
                   <FaEye className="mr-2" />
                   Vista Previa

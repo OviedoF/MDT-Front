@@ -138,7 +138,7 @@ export default function AvailableCollaboratorsPage() {
               </tr>
             </thead>
             <tbody>
-              {usersData?.available?.map((user) => (
+              {usersData?.available?.map((user: any) => (
                 <tr key={JSON.stringify(user)}>
                   <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
@@ -207,7 +207,7 @@ export default function AvailableCollaboratorsPage() {
             <div className="space-y-2">
               {projects
                 .filter((p) => p.active)
-                .map((project) => (
+                .map((project: any) => (
                   <button
                     key={project._id}
                     onClick={() => handleAssignUser(project._id)}

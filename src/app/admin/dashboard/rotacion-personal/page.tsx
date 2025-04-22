@@ -7,14 +7,14 @@ import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 
 interface User {
-  _id: number
+  _id: string
   name: string
   total: string
   projects: Project[]
 }
 
 interface Project {
-  _id: number
+  _id: string
   project: string
   totalHours: string
   averageDaily: string

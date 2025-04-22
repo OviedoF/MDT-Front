@@ -42,13 +42,14 @@ export default function page() {
                         {projects.map((project) => (
                             <div key={project._id} className="bg-white rounded-lg py-4 shadow-sm flex flex-col">
                                 <div className="flex items-center justify-between gap-2 mb-4">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                        project.active ? 'bg-[#55C157]' : 'bg-gray-400'
-                                    }`} />
-                                    <span className="text-gray-600 text-sm ml-4">{
-                                        project._id.slice(0, 3) + '...' + project._id.slice(-3)
-                                    }</span>
-                                    <div className="text-[12px] text-gray-600 mr-5">Días Incompletos (0)</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${project.active ? 'bg-[#55C157]' : 'bg-gray-400'
+                                            }`} />
+                                        <span className="text-gray-600 text-sm ml-4">{
+                                            project._id.slice(0, 6)
+                                        }</span>
+                                    </div>
+                                    <div className="text-[12px] text-gray-600 mr-5"></div>
                                     <span className="bg-green text-white text-xs px-2 py-2 rounded-full">
                                         {project.name.slice(0, 2).toUpperCase()}
                                     </span>

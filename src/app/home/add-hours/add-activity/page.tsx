@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import UserPage from "../../components/UserPage"
 import { FaClock, FaPlus, FaSearch, FaCheck, FaTrash } from "react-icons/fa"
 import { makeQuery } from "@/app/utils/api"
@@ -11,14 +11,14 @@ import dayjs from "dayjs"
 import 'dayjs/locale/es'
 dayjs.locale("es")
 
-const dayNames = {
-  "sábado": "saturday",
-  "domingo": "sunday",
-  "lunes": "monday",
-  "martes": "tuesday",
-  "miércoles": "wednesday",
-  "jueves": "thursday",
-  "viernes": "friday",
+const dayNames: any = {
+    "sábado": "saturday",
+    "domingo": "sunday",
+    "lunes": "monday",
+    "martes": "tuesday",
+    "miércoles": "wednesday",
+    "jueves": "thursday",
+    "viernes": "friday",
 }
 
 type Step = 1 | 2 | 3 | 4
@@ -30,7 +30,7 @@ interface Collaborator {
     selected: boolean
 }
 
-export default function ActivityFormPage() {
+function Content() {
     const [currentStep, setCurrentStep] = useState<Step>(1)
     const [topographerSignature, setTopographerSignature] = useState(false)
     const [supervisorSignature, setSupervisorSignature] = useState(false)
@@ -56,23 +56,7 @@ export default function ActivityFormPage() {
     )
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        makeQuery(
-            token,
-            "getCollaborators",
-            "",
-            enqueueSnackbar,
-            (data) => setForm({
-                ...form,
-                collaborators: data.map((collab: any) => ({
-                    _id: collab._id,
-                    name: collab.name,
-                    initials: collab.name.slice(0, 2).toUpperCase(),
-                    selected: false,
-                }))
-            }),
-        );
-        getProjectData()	
+        getProjectData()
     }, []);
 
     useEffect(() => {
@@ -86,7 +70,7 @@ export default function ActivityFormPage() {
         makeQuery(
             localStorage.getItem("token"),
             'getProject',
-            project,
+            project || '',
             enqueueSnackbar,
             (response) => {
                 const selectedWorkSchedule = response.workSchedule[dayNames[dayName]] || {
@@ -98,6 +82,7 @@ export default function ActivityFormPage() {
                     ...form,
                     startTime: selectedWorkSchedule.startTime,
                     endTime: selectedWorkSchedule.endTime,
+                    collaborators: response.collaborators
                 })
             },
         )
@@ -410,20 +395,31 @@ export default function ActivityFormPage() {
     }
 
     return (
-        <UserPage>
-            <div className=" bg-white p-4">
-                <div className="max-w-md mx-auto py-6">{renderCurrentStep()}</div>
 
-                {topographerSignature && <SignatureModal isOpen={topographerSignature} onClose={() => setTopographerSignature(false)} onSave={(data) => setForm({
-                    ...form,
-                    topographerSignature: data,
-                })} title="Firma del Topógrafo" />}
+            <UserPage>
+                <div className=" bg-white p-4">
+                    <div className="max-w-md mx-auto py-6">{renderCurrentStep()}</div>
 
-                {supervisorSignature && <SignatureModal isOpen={supervisorSignature} onClose={() => setSupervisorSignature(false)} onSave={(data) => setForm({
-                    ...form,
-                    supervisorSignature: data,
-                })} title="Firma del Supervisor" />}
-            </div>
-        </UserPage>
+                    {topographerSignature && <SignatureModal isOpen={topographerSignature} onClose={() => setTopographerSignature(false)} onSave={(data) => setForm({
+                        ...form,
+                        topographerSignature: data,
+                    })} title="Firma del Topógrafo" />}
+
+                    {supervisorSignature && <SignatureModal isOpen={supervisorSignature} onClose={() => setSupervisorSignature(false)} onSave={(data) => setForm({
+                        ...form,
+                        supervisorSignature: data,
+                    })} title="Firma del Supervisor" />}
+                </div>
+            </UserPage>
     )
 }
+
+
+export default function Page() {
+  return (
+    <Suspense>
+      <Content />
+    </Suspense>
+  )
+}
+

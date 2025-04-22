@@ -7,7 +7,7 @@ import { FaUserPlus, FaSignOutAlt } from "react-icons/fa"
 import { makeQuery } from "@/app/utils/api"
 
 interface User {
-  _id: number
+  _id: string
   name: string
   email: string
   password: string
@@ -27,7 +27,7 @@ interface WorkSchedule {
   friday: WorkingHours
 }
 interface Project {
-  _id: number
+  _id: string
   name: string
   description: string
   supervisor: number
@@ -61,7 +61,7 @@ export default function AddCollaboratorPage() {
     if (selectedProject) {
       availableUsers = availableUsers.filter((user) => {
         const project = projects.find((project) => project._id === selectedProject)
-        return project && !project.collaborators.some((collaborator) => collaborator === user._id)
+        return project && !project.collaborators.some((collaborator : any) => collaborator === user._id)
       })
     }
 
@@ -76,12 +76,12 @@ export default function AddCollaboratorPage() {
 
     const project = projects.find((project) => project._id === selectedProject)
 
-    if (project?.collaborators.some((collaborator) => collaborator._id === selectedUser)) {
+    if (project?.collaborators.some((collaborator: any) => collaborator._id === selectedUser)) {
       enqueueSnackbar("El colaborador ya está asignado a este proyecto", { variant: "warning" })
       return
     }
 
-    const newCollaborators = project?.collaborators.map((collaborator) => collaborator._id)
+    const newCollaborators = project?.collaborators.map((collaborator: any) => collaborator._id)
 
     newCollaborators?.push(selectedUser)
 
@@ -170,7 +170,7 @@ export default function AddCollaboratorPage() {
               Seleccionar Colaborador
             </label>
             <select
-              _id="collaborator"
+              id="collaborator"
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               className="w-full p-2 border rounded"
@@ -199,7 +199,7 @@ export default function AddCollaboratorPage() {
             <ul className="list-disc pl-5">
               {projects
                 .find((project) => project._id === selectedProject)
-                ?.collaborators.map((collaborator) => (
+                ?.collaborators.map((collaborator:any) => (
                   <li key={collaborator._id}>{collaborator?.name}</li>
                 ))}
             </ul>

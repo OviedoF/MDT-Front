@@ -92,6 +92,7 @@ petitions.getUserProjectsControl = (form: FormType) => api.post(`/project/contro
 petitions.getDaySummary = (form: FormType) => api.post(`/project/day-summary`, form);
 petitions.getProjectCosts = (form: FormType) => api.post(`/project/costs`, form);
 petitions.sendMail = (form: FormType) => api.post(`/project/send-mail`, form);
+petitions.getEntriesByDate = (form: FormType) => api.post(`/project/entries-by-date`, form);
 
 // * WORK ENTRIES
 petitions.createWorkEntry = (form: FormType) => api.post("/work-entry", form);
@@ -107,5 +108,14 @@ petitions.getNotification = (id: string) => api.get(`/notification/${id}`);
 petitions.createNotification = (form: FormType) => api.post("/notification", form);
 petitions.updateNotification = (form: FormType) => api.put(`/notification/${form._id}`, form);
 petitions.deleteNotification = (id: string) => api.delete(`/notification/${id}`);
+
+// * EXTRA HOUR REQUESTS
+petitions.createExtraHourRequest = (form: FormType) => api.post("/overtime", form);
+petitions.getExtraHourRequests = (query: FormType = {}) => api.get("/overtime", { params: query });
+petitions.getExtraHourRequest = (id: string) => api.get(`/overtime/${id}`);
+petitions.updateExtraHourRequest = (form: FormType) => api.put(`/overtime/${form._id}`, form);
+petitions.deleteExtraHourRequest = (id: string) => api.delete(`/overtime/${id}`);
+petitions.approveExtraHourRequest = (form: FormType) => api.patch(`/overtime/${form._id}/approve`, form);
+
 
 export default petitions;

@@ -86,7 +86,7 @@ export default function SendProjectEmailPage() {
                 <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
-                  _id="email"
+                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
@@ -104,7 +104,7 @@ export default function SendProjectEmailPage() {
                 <select
                   id="project"
                   value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  onChange={(e:any) => setSelectedProjectId(e.target.value)}
                   className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
                   required
                 >

@@ -7,7 +7,7 @@ import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 
 interface User {
-  _id: number
+  _id: string
   name: string
   role: "colaborador" | "topografo"
   regularHours: number

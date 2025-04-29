@@ -58,6 +58,8 @@ function Content() {
         comments: "",
         collaborators: [] as Collaborator[],
         supervisorName: "",
+        startTime: "08:00",
+        endTime: "17:00",
     })
 
     // Signature state

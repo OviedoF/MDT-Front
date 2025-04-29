@@ -215,6 +215,8 @@ export default function ManageProjectsPage() {
           endDate: new Date(),
           workedHours: 0,
           workSchedule: defaultWorkSchedule,
+          infoProcessRate: 0,
+          alias: "",
         })
         enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
       },

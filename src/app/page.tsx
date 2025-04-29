@@ -4,10 +4,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { FaEye, FaEyeSlash, FaInfoCircle } from "react-icons/fa"
-import { useSnackbar } from "notistack"
+import { SnackbarProvider, useSnackbar } from "notistack"
 import { makeQuery } from "./utils/api"
 
-export default function LoginPage() {
+function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
@@ -25,6 +25,10 @@ export default function LoginPage() {
       token,
       enqueueSnackbar,
       (response: any) => {
+        if(response.role !== 'topografo') {
+          enqueueSnackbar("No tienes permisos para acceder a esta aplicación", { variant: "error" })
+          return
+        }
         localStorage.setItem("user", JSON.stringify(response))
         localStorage.setItem("token", token)
         enqueueSnackbar("Logeo exitoso", { variant: "success" })
@@ -136,3 +140,13 @@ export default function LoginPage() {
     </main>
   )
 }
+
+function Page() {
+  return (
+    <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
+      <LoginPage />
+    </SnackbarProvider>
+  )
+}
+
+export default Page

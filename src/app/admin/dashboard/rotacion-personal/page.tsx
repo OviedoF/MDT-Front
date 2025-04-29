@@ -132,10 +132,10 @@ export default function CollaboratorProjectsPage() {
                       Horas Totales
                     </th>
                     <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Horas Diarias (Promedio)
+                      Horas Diarias
                     </th>
                     <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Horas Extras (Promedio)
+                      Horas Extras
                     </th>
                     <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Costo por Hora

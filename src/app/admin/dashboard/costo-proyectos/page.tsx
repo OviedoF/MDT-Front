@@ -12,6 +12,7 @@ interface Project {
   monthlyCost: string
   dailyCost: string
   extraHourCost: string
+  infoProcessRate: string
 }
 
 export default function ProjectCostsPage() {
@@ -148,7 +149,7 @@ export default function ProjectCostsPage() {
         {selectedProject && (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">Detalles de Costos: {selectedProject.projectName}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-blue-100 p-4 rounded-lg">
                 <FaDollarSign className="text-blue-500 text-3xl mb-2" />
                 <h3 className="text-lg font-semibold">Costo Mensual</h3>
@@ -164,6 +165,12 @@ export default function ProjectCostsPage() {
                 <h3 className="text-lg font-semibold">Costo Hora Extra</h3>
                 <p className="text-2xl font-bold">{selectedProject.extraHourCost}</p>
               </div>
+
+              <div className="bg-red-100 p-4 rounded-lg">
+                <FaDollarSign className="text-red-500 text-3xl mb-2" />
+                <h3 className="text-lg font-semibold">Costo Procesamiento de Información</h3>
+                <p className="text-2xl font-bold">{selectedProject.infoProcessRate}</p>
+                </div>
             </div>
           </div>
         )}
@@ -186,6 +193,9 @@ export default function ProjectCostsPage() {
                   <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Costo Hora Extra
                   </th>
+                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Costo procesamiento de la información
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -195,6 +205,7 @@ export default function ProjectCostsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">{project.monthlyCost}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{project.dailyCost}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{project.extraHourCost}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.infoProcessRate}</td>
                   </tr>
                 ))}
               </tbody>

@@ -47,7 +47,7 @@ export default function CollaboratorsModal({ isOpen, onClose, onSave, title }: S
         }))
       }),
     );
-  }, []);
+  }, [isOpen]);
 
   if (!isOpen) return null
 

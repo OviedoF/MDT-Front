@@ -45,6 +45,8 @@ interface Project {
   active: boolean
   workSchedule: WorkSchedule
   workedHours: number
+  infoProcessRate: number
+  alias: string
 }
 
 const defaultWorkSchedule: WorkSchedule = {
@@ -83,6 +85,8 @@ export default function ManageProjectsPage() {
       active: true,
       workedHours: 0,
       workSchedule: defaultWorkSchedule,
+      infoProcessRate: 0,
+      alias: "",
     }
   )
   const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
@@ -104,6 +108,8 @@ export default function ManageProjectsPage() {
     endDate: new Date(),
     workedHours: 0,
     workSchedule: defaultWorkSchedule,
+    infoProcessRate: 0,
+    alias: "",
   })
   const [loading, setLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
@@ -251,6 +257,8 @@ export default function ManageProjectsPage() {
             active: true,
             workedHours: 0,
             workSchedule: defaultWorkSchedule,
+            infoProcessRate: 0,
+            alias: "",
           })
           enqueueSnackbar("Proyecto actualizado correctamente", { variant: "success" })
         },
@@ -321,6 +329,8 @@ export default function ManageProjectsPage() {
             active: true,
             workedHours: 0,
             workSchedule: defaultWorkSchedule,
+            infoProcessRate: 0,
+            alias: "",
           })
           enqueueSnackbar("Proyecto habilitado correctamente", { variant: "success" })
         },
@@ -365,6 +375,8 @@ export default function ManageProjectsPage() {
             active: true,
             workedHours: 0,
             workSchedule: defaultWorkSchedule,
+            infoProcessRate: 0,
+            alias: "",
           })
           enqueueSnackbar("Proyecto deshabilitado correctamente", { variant: "success" })
         },
@@ -590,6 +602,17 @@ export default function ManageProjectsPage() {
                   }}
                   className="w-full p-2 mb-4 border rounded"
                 />
+                
+                <label className="block text-sm font-medium text-gray-700 mb-2">Alias del Proyecto</label>
+                <input
+                  type="text"
+                  placeholder="Alias del Proyecto"
+                  value={newProject.alias}
+                  onChange={(e) => {
+                    setNewProject({ ...newProject, alias: e.target.value })
+                  }}
+                  className="w-full p-2 mb-4 border rounded"
+                />
 
                 <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
                 <textarea
@@ -653,30 +676,52 @@ export default function ManageProjectsPage() {
                     ))}
                 </select>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
-                <input
-                  type="number"
-                  placeholder="Costo Total del Proyecto"
-                  value={newProject.totalCost}
-                  onChange={(e) => setNewProject({ ...newProject, totalCost: Math.max(0, Number(e.target.value)) })}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 mb-4 border rounded"
-                />
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo Total del Proyecto"
+                    value={newProject.totalCost}
+                    onChange={(e) => setNewProject({ ...newProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
-                <input
-                  type="number"
-                  placeholder="Costo por Hora"
-                  value={newProject.hourlyRate}
-                  onChange={(e) => setNewProject({ ...newProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 mb-4 border rounded"
-                />
+
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo por Hora"
+                    value={newProject.hourlyRate}
+                    onChange={(e) => setNewProject({ ...newProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo de procesamiento de la información</label>
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo de procesamiento de la información"
+                    value={newProject.infoProcessRate}
+                    onChange={(e) => setNewProject({ ...newProject, infoProcessRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
 
                 {
-                  (newProject.totalCost && newProject.hourlyRate) && <p className="text-sm text-gray-500 mb-2">
+                  (newProject.totalCost && newProject.hourlyRate) ? <p className="text-sm text-gray-500 mb-2">
                     Horas totales del proyecto: {newProject.totalCost / newProject.hourlyRate} horas
-                  </p>
+                  </p> : ''
                 }
 
                 <div className="mb-4">
@@ -774,6 +819,17 @@ export default function ManageProjectsPage() {
                   className="w-full p-2 mb-4 border rounded"
                 />
 
+                <label className="block text-sm font-medium text-gray-700 mb-2">Alias del Proyecto</label>
+                <input
+                  type="text"
+                  placeholder="Alias del Proyecto"
+                  value={currentProject.alias}
+                  onChange={(e) => {
+                    setCurrentProject({ ...currentProject, alias: e.target.value })
+                  }}
+                  className="w-full p-2 mb-4 border rounded"
+                />
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
                 <textarea
                   placeholder="Descripción (opcional)"
@@ -835,26 +891,49 @@ export default function ManageProjectsPage() {
                       </option>
                     ))}
                 </select>
+                
                 <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
-                <input
-                  type="number"
-                  placeholder="Costo Total del Proyecto"
-                  value={currentProject.totalCost}
-                  onChange={(e) => setCurrentProject({ ...currentProject, totalCost: Math.max(0, Number(e.target.value)) })}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 mb-4 border rounded"
-                />
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo Total del Proyecto"
+                    value={currentProject.totalCost}
+                    onChange={(e) => setCurrentProject({ ...currentProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">Costo por Hora</label>
-                <input
-                  type="number"
-                  placeholder="Costo por Hora"
-                  value={currentProject.hourlyRate}
-                  onChange={(e) => setCurrentProject({ ...currentProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 mb-4 border rounded"
-                />
+
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo por Hora"
+                    value={currentProject.hourlyRate}
+                    onChange={(e) => setCurrentProject({ ...currentProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo de procesamiento de la información</label>
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo de procesamiento de la información"
+                    value={currentProject.infoProcessRate}
+                    onChange={(e) => setCurrentProject({ ...currentProject, infoProcessRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
 
                 {
                   (currentProject.totalCost && currentProject.hourlyRate) && <p className="text-sm text-gray-500 mb-2">

@@ -26,7 +26,7 @@ export default function RequestHoursPage() {
   const { enqueueSnackbar } = useSnackbar()
 
   const getWeekDays = () => {
-    const startOfWeek = dayjs().startOf("week").add(1, "day") // Lunes
+    const startOfWeek = dayjs().startOf("week").add(-3, "day") // Lunes
     return Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, "day"))
   }
 

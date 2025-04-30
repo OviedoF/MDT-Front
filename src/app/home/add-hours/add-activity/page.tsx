@@ -145,6 +145,11 @@ function Content() {
                 closeTime: reportCloseTime,
             }
 
+            if (activities.length === 0) {
+                enqueueSnackbar("Por favor agrega al menos una actividad", { variant: "error" })
+                return
+            }
+
             if (!formData.name || !formData.startTime || !formData.endTime || !formData.supervisorName) {
                 enqueueSnackbar("Por favor completa todos los campos", { variant: "error" })
                 return
@@ -627,7 +632,7 @@ function Content() {
 
     return (
         <UserPage>
-            <div className="min-h-[120vh] bg-white">
+            <div className="min-h-[120vh] bg-white pb-24">
                 <div className="max-w-md mx-auto py-6 px-4">{renderCurrentStep()}</div>
 
                 {/* Signature Modal */}

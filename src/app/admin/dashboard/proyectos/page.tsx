@@ -35,6 +35,7 @@ interface Project {
   name: string
   description: string
   supervisor: any
+  supervisorEmail: string
   topographers: any[]
   collaborators: any[]
   totalCost: number
@@ -87,6 +88,7 @@ export default function ManageProjectsPage() {
       workSchedule: defaultWorkSchedule,
       infoProcessRate: 0,
       alias: "",
+      supervisorEmail: "",
     }
   )
   const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
@@ -99,6 +101,7 @@ export default function ManageProjectsPage() {
       password: "",
       role: "admin",
     },
+    supervisorEmail: "",
     topographers: [],
     collaborators: [],
     totalCost: 0,
@@ -139,6 +142,36 @@ export default function ManageProjectsPage() {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
       return false
     }
+
+    if (project.topographers.length === 0) {
+      enqueueSnackbar("Debe seleccionar al menos un topógrafo", { variant: "warning" })
+      return false
+    }
+
+    if (project.collaborators.length === 0) {
+      enqueueSnackbar("Debe seleccionar al menos un colaborador", { variant: "warning" })
+      return false
+    }
+
+    if (project.totalCost === 0) {
+      enqueueSnackbar("El costo total es obligatorio", { variant: "warning" })
+      return false
+    }
+
+    if (project.hourlyRate === 0) {
+      enqueueSnackbar("El costo por hora es obligatorio", { variant: "warning" })
+      return false
+    }
+
+    if (project.infoProcessRate === 0) {
+      enqueueSnackbar("El costo de procesamiento de la información es obligatorio", { variant: "warning" })
+      return false
+    }
+
+    if (project.supervisorEmail === "") {
+      enqueueSnackbar("El correo del supervisor es obligatorio", { variant: "warning" })
+      return false
+    }
     if (project.totalCost < 0) {
       enqueueSnackbar("El costo total debe ser un número positivo", { variant: "warning" })
       return false
@@ -174,7 +207,7 @@ export default function ManageProjectsPage() {
 
     return true
   }
-
+    
   const getDayName = (day: keyof WorkSchedule) => {
     const dayNames = {
       monday: "Lunes",
@@ -206,6 +239,7 @@ export default function ManageProjectsPage() {
             password: "",
             role: "admin",
           },
+          supervisorEmail: "",
           topographers: [],
           collaborators: [],
           totalCost: 0,
@@ -249,6 +283,7 @@ export default function ManageProjectsPage() {
               password: "",
               role: "admin",
             },
+            supervisorEmail: "",
             topographers: [],
             collaborators: [],
             totalCost: 0,
@@ -321,6 +356,7 @@ export default function ManageProjectsPage() {
               password: "",
               role: "admin",
             },
+            supervisorEmail: "",
             topographers: [],
             collaborators: [],
             totalCost: 0,
@@ -367,6 +403,7 @@ export default function ManageProjectsPage() {
               password: "",
               role: "admin",
             },
+            supervisorEmail: "",
             topographers: [],
             collaborators: [],
             totalCost: 0,
@@ -399,7 +436,6 @@ export default function ManageProjectsPage() {
       enqueueSnackbar,
       (response) => {
         setProjects(response)
-        console.log(response)
       },
       setLoading,
       () => { }
@@ -637,6 +673,14 @@ export default function ManageProjectsPage() {
                       </option>
                     ))}
                 </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Correo del Supervisor</label>
+                <input
+                  type="email"
+                  placeholder="Correo del Supervisor"
+                  value={newProject.supervisorEmail}
+                  onChange={(e) => setNewProject({ ...newProject, supervisorEmail: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                />
                 <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
                 <select
                   multiple
@@ -853,6 +897,14 @@ export default function ManageProjectsPage() {
                       </option>
                     ))}
                 </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Correo del Supervisor</label>
+                <input
+                  type="email"
+                  placeholder="Correo del Supervisor"
+                  value={currentProject.supervisorEmail}
+                  onChange={(e) => setCurrentProject({ ...currentProject, supervisorEmail: e.target.value })}
+                  className="w-full p-2 mb-4 border rounded"
+                />
                 <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Topógrafos</label>
                 <select
                   multiple

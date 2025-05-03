@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { FaSignOutAlt, FaEnvelope, FaProjectDiagram, FaPaperPlane } from "react-icons/fa"
+import { FaSignOutAlt, FaEnvelope, FaProjectDiagram, FaPaperPlane, FaCalendarAlt } from "react-icons/fa"
 import { useSnackbar } from "notistack"
 import { makeQuery } from "@/app/utils/api"
 
@@ -19,11 +19,39 @@ export default function SendProjectEmailPage() {
   const [email, setEmail] = useState("")
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<number | "">("")
+  const [selectedMonth, setSelectedMonth] = useState<string>("")
+  const [selectedYear, setSelectedYear] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
+
+  const months = [
+    { value: "1", label: "Enero" },
+    { value: "2", label: "Febrero" },
+    { value: "3", label: "Marzo" },
+    { value: "4", label: "Abril" },
+    { value: "5", label: "Mayo" },
+    { value: "6", label: "Junio" },
+    { value: "7", label: "Julio" },
+    { value: "8", label: "Agosto" },
+    { value: "9", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ]
+
+  const generateYearOptions = () => {
+    const currentYear = new Date().getFullYear()
+    const years = []
+    for (let i = currentYear; i >= currentYear - 5; i--) {
+      years.push({ value: i.toString(), label: i.toString() })
+    }
+    return years
+  }
+
+  const years = generateYearOptions()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || selectedProjectId === "") {
+    if (!email || selectedProjectId === "" || !selectedMonth || !selectedYear) {
       enqueueSnackbar("Por favor, complete todos los campos", { variant: "warning" })
       return
     }
@@ -31,15 +59,22 @@ export default function SendProjectEmailPage() {
     makeQuery(
       localStorage.getItem("token"),
       "sendMail",
-      { email, projectId: selectedProjectId },
+      {
+        email,
+        projectId: selectedProjectId,
+        month: selectedMonth,
+        year: selectedYear,
+      },
       enqueueSnackbar,
       (response) => {
         enqueueSnackbar("Email enviado con éxito", { variant: "success" })
         setEmail("")
         setSelectedProjectId("")
+        setSelectedMonth("")
+        setSelectedYear("")
       },
       setIsLoading,
-      () => { }
+      () => {},
     )
   }
 
@@ -53,7 +88,7 @@ export default function SendProjectEmailPage() {
         setProjects(response)
       },
       setIsLoading,
-      () => { }
+      () => {},
     )
   }
 
@@ -104,7 +139,7 @@ export default function SendProjectEmailPage() {
                 <select
                   id="project"
                   value={selectedProjectId}
-                  onChange={(e:any) => setSelectedProjectId(e.target.value)}
+                  onChange={(e: any) => setSelectedProjectId(e.target.value)}
                   className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
                   required
                 >
@@ -115,6 +150,52 @@ export default function SendProjectEmailPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+                  Mes
+                </label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <select
+                    id="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
+                    required
+                  >
+                    <option value="">Seleccione mes</option>
+                    {months.map((month) => (
+                      <option key={month.value} value={month.value}>
+                        {month.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                  Año
+                </label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <select
+                    id="year"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="pl-10 w-full p-2 border rounded focus:ring-violet-500 focus:border-violet-500"
+                    required
+                  >
+                    <option value="">Seleccione año</option>
+                    {years.map((year) => (
+                      <option key={year.value} value={year.value}>
+                        {year.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
             <button

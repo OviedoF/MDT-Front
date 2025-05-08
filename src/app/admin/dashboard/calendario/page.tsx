@@ -30,7 +30,7 @@ const dayDetails: DayDetails = {
         { _id: "u3", name: "Carlos Díaz" }
       ],
       user: { _id: "u1", name: "Juan Pérez", email: "juan@example.com" },
-      supervisor: { _id: "u4", name: "Ana Torres", email: "ana@example.com" },
+      supervisor: '',
       incompleteUsers: [{ _id: "u3", name: "Carlos Díaz" }],
       activities: [
         {
@@ -59,7 +59,7 @@ const dayDetails: DayDetails = {
       endTime: "17:30",
       collaborators: [],
       user: { _id: "u1", name: "Juan Pérez", email: "juan@example.com" },
-      supervisor: { _id: "u4", name: "Ana Torres", email: "ana@example.com" },
+      supervisor: '',
       incompleteUsers: [],
       activities: [
         {

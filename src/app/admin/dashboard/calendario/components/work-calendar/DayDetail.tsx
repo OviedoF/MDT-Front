@@ -110,7 +110,7 @@ export default function DayDetail({
             )}
 
             <div className="mt-2 pl-4 border-l-2 border-gray-200">
-              <p className="font-medium">Supervisor: {activity.supervisor.name} | Topógrafo: {activity.user.name}</p>
+              <p className="font-medium">Supervisor: {activity.supervisor} | Topógrafo: {activity.user.name}</p>
               <p className="text-sm text-gray-600 mt-1">Colaboradores: {
                 activity.collaborators.map((collab, index) => (
                   <span key={index}>

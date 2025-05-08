@@ -53,7 +53,7 @@ interface WorkEntry {
   endTime: string
   collaborators: Usercito[]
   user: Usercito
-  supervisor: Usercito
+  supervisor: string
   incompleteUsers: Usercito[]
   activities: WorkEntryActivity[]
 }

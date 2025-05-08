@@ -20,6 +20,7 @@ interface WorkSchedule {
   wednesday: WorkingHours
   thursday: WorkingHours
   friday: WorkingHours
+  saturday: WorkingHours
 }
 
 interface User {
@@ -34,12 +35,13 @@ interface Project {
   _id: string
   name: string
   description: string
-  supervisor: any
+  supervisor: string
   supervisorEmail: string
   topographers: any[]
   collaborators: any[]
   totalCost: number
   hourlyRate: number
+  gridRate: number
   billingDate: any | string
   startDate: any | string
   endDate: any | string
@@ -56,7 +58,30 @@ const defaultWorkSchedule: WorkSchedule = {
   wednesday: { startTime: "09:00", endTime: "17:00" },
   thursday: { startTime: "09:00", endTime: "17:00" },
   friday: { startTime: "09:00", endTime: "17:00" },
+  saturday: { startTime: "09:00", endTime: "13:00" },
 }
+
+const emptyProject: Project = {
+  _id: "",
+  name: "",
+  description: "",
+  supervisor: '',
+  topographers: [],
+  collaborators: [],
+  totalCost: 0,
+  hourlyRate: 0,
+  gridRate: 0,
+  billingDate: new Date(),
+  startDate: new Date(),
+  endDate: new Date(),
+  active: true,
+  workedHours: 0,
+  workSchedule: defaultWorkSchedule,
+  infoProcessRate: 0,
+  alias: "",
+  supervisorEmail: "",
+}
+
 
 export default function ManageProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -64,73 +89,13 @@ export default function ManageProjectsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [currentProject, setCurrentProject] = useState<Project>(
-    {
-      _id: "",
-      name: "",
-      description: "",
-      supervisor: {
-        _id: "",
-        name: "",
-        email: "",
-        password: "",
-        role: "admin",
-      },
-      topographers: [],
-      collaborators: [],
-      totalCost: 0,
-      hourlyRate: 0,
-      billingDate: new Date(),
-      startDate: new Date(),
-      endDate: new Date(),
-      active: true,
-      workedHours: 0,
-      workSchedule: defaultWorkSchedule,
-      infoProcessRate: 0,
-      alias: "",
-      supervisorEmail: "",
-    }
-  )
-  const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>({
-    name: "",
-    description: "",
-    supervisor: {
-      _id: "",
-      name: "",
-      email: "",
-      password: "",
-      role: "admin",
-    },
-    supervisorEmail: "",
-    topographers: [],
-    collaborators: [],
-    totalCost: 0,
-    hourlyRate: 0,
-    billingDate: new Date(),
-    startDate: new Date(),
-    endDate: new Date(),
-    workedHours: 0,
-    workSchedule: defaultWorkSchedule,
-    infoProcessRate: 0,
-    alias: "",
-  })
+  const [currentProject, setCurrentProject] = useState<Project>(emptyProject)
+  const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>(emptyProject)
   const [loading, setLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [toggleActiveModal, setToggleActiveModal] = useState(false)
   const [toggleDesactiveModal, setToggleDesactiveModal] = useState(false)
   const router = useRouter()
-  const inputsRef = {
-    name: useRef(null),
-    description: useRef(null),
-    supervisor: useRef(null),
-    topographers: useRef(null),
-    collaborators: useRef(null),
-    totalCost: useRef(null),
-    hourlyRate: useRef(null),
-    billingDate: useRef(null),
-    startDate: useRef(null),
-    endDate: useRef(null),
-  }
   const { enqueueSnackbar } = useSnackbar()
 
   const validateProject = (project: Omit<Project, "_id" | "active">) => {
@@ -138,7 +103,7 @@ export default function ManageProjectsPage() {
       enqueueSnackbar("El nombre del proyecto es obligatorio", { variant: "warning" })
       return false
     }
-    if (project.supervisor._id === "") {
+    if (!project.supervisor) {
       enqueueSnackbar("Debe seleccionar un supervisor", { variant: "warning" })
       return false
     }
@@ -207,7 +172,7 @@ export default function ManageProjectsPage() {
 
     return true
   }
-    
+
   const getDayName = (day: keyof WorkSchedule) => {
     const dayNames = {
       monday: "Lunes",
@@ -215,6 +180,7 @@ export default function ManageProjectsPage() {
       wednesday: "Miércoles",
       thursday: "Jueves",
       friday: "Viernes",
+      saturday: "Sábado",
     }
     return dayNames[day]
   }
@@ -229,29 +195,7 @@ export default function ManageProjectsPage() {
       (response) => {
         getProjects()
         setIsCreateModalOpen(false)
-        setNewProject({
-          name: "",
-          description: "",
-          supervisor: {
-            _id: "",
-            name: "",
-            email: "",
-            password: "",
-            role: "admin",
-          },
-          supervisorEmail: "",
-          topographers: [],
-          collaborators: [],
-          totalCost: 0,
-          hourlyRate: 0,
-          billingDate: new Date(),
-          startDate: new Date(),
-          endDate: new Date(),
-          workedHours: 0,
-          workSchedule: defaultWorkSchedule,
-          infoProcessRate: 0,
-          alias: "",
-        })
+        setNewProject(emptyProject)
         enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
       },
       setLoading,
@@ -272,31 +216,7 @@ export default function ManageProjectsPage() {
         (response) => {
           getProjects()
           setIsEditModalOpen(false)
-          setCurrentProject({
-            _id: "",
-            name: "",
-            description: "",
-            supervisor: {
-              _id: "",
-              name: "",
-              email: "",
-              password: "",
-              role: "admin",
-            },
-            supervisorEmail: "",
-            topographers: [],
-            collaborators: [],
-            totalCost: 0,
-            hourlyRate: 0,
-            billingDate: new Date(),
-            startDate: new Date(),
-            endDate: new Date(),
-            active: true,
-            workedHours: 0,
-            workSchedule: defaultWorkSchedule,
-            infoProcessRate: 0,
-            alias: "",
-          })
+          setCurrentProject(emptyProject)
           enqueueSnackbar("Proyecto actualizado correctamente", { variant: "success" })
         },
         setLoading,
@@ -345,31 +265,7 @@ export default function ManageProjectsPage() {
           getProjects()
           setToggleActiveModal(false)
           setToggleDesactiveModal(false)
-          setCurrentProject({
-            _id: "",
-            name: "",
-            description: "",
-            supervisor: {
-              _id: "",
-              name: "",
-              email: "",
-              password: "",
-              role: "admin",
-            },
-            supervisorEmail: "",
-            topographers: [],
-            collaborators: [],
-            totalCost: 0,
-            hourlyRate: 0,
-            billingDate: new Date(),
-            startDate: new Date(),
-            endDate: new Date(),
-            active: true,
-            workedHours: 0,
-            workSchedule: defaultWorkSchedule,
-            infoProcessRate: 0,
-            alias: "",
-          })
+          setCurrentProject(emptyProject)
           enqueueSnackbar("Proyecto habilitado correctamente", { variant: "success" })
         },
         setLoading,
@@ -392,31 +288,7 @@ export default function ManageProjectsPage() {
           getProjects()
           setToggleDesactiveModal(false)
           setToggleActiveModal(false)
-          setCurrentProject({
-            _id: "",
-            name: "",
-            description: "",
-            supervisor: {
-              _id: "",
-              name: "",
-              email: "",
-              password: "",
-              role: "admin",
-            },
-            supervisorEmail: "",
-            topographers: [],
-            collaborators: [],
-            totalCost: 0,
-            hourlyRate: 0,
-            billingDate: new Date(),
-            startDate: new Date(),
-            endDate: new Date(),
-            active: true,
-            workedHours: 0,
-            workSchedule: defaultWorkSchedule,
-            infoProcessRate: 0,
-            alias: "",
-          })
+          setCurrentProject(emptyProject)
           enqueueSnackbar("Proyecto deshabilitado correctamente", { variant: "success" })
         },
         setLoading,
@@ -543,7 +415,7 @@ export default function ManageProjectsPage() {
                 <tr key={project._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{project.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {project.supervisor?.name}
+                    {project.supervisor}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {project.topographers.map((topographer: any) => topographer.name).join(", ")}
@@ -640,7 +512,7 @@ export default function ManageProjectsPage() {
                   }}
                   className="w-full p-2 mb-4 border rounded"
                 />
-                
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">Alias del Proyecto</label>
                 <input
                   type="text"
@@ -659,20 +531,14 @@ export default function ManageProjectsPage() {
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                   className="w-full p-2 mb-4 border rounded"
                 />
-                <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-2">Supervisor</label>
+                <input 
+                  type="text"
+                  placeholder="Nombre del Supervisor"
                   value={newProject.supervisor}
                   onChange={(e) => setNewProject({ ...newProject, supervisor: e.target.value })}
                   className="w-full p-2 mb-4 border rounded"
-                >
-                  <option value={0}>Seleccionar Supervisor</option>
-                  {users
-                    .map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
-                      </option>
-                    ))}
-                </select>
+                />
                 <label className="block text-sm font-medium text-gray-700 mb-2">Correo del Supervisor</label>
                 <input
                   type="email"
@@ -764,6 +630,20 @@ export default function ManageProjectsPage() {
                   />
                 </div>
 
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo por cuadrilla</label>
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo de la cuadrilla"
+                    value={newProject.gridRate}
+                    onChange={(e) => setNewProject({ ...newProject, gridRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
                 {
                   (newProject.totalCost && newProject.hourlyRate) ? <p className="text-sm text-gray-500 mb-2">
                     Horas totales del proyecto: {newProject.totalCost / newProject.hourlyRate} horas
@@ -805,7 +685,7 @@ export default function ManageProjectsPage() {
                   </p>
 
                   <div className="space-y-3">
-                    {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
+                    {(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map((day) => (
                       <div key={day} className="flex items-center">
                         <span className="w-24 font-medium">{getDayName(day)}:</span>
                         <div className="flex items-center">
@@ -884,20 +764,15 @@ export default function ManageProjectsPage() {
                   className="w-full p-2 mb-4 border rounded"
                 />
                 <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Supervisor</label>
-                <select
-                  value={currentProject.supervisor}
-                  onChange={(e) => setCurrentProject({ ...currentProject, supervisor: e.target.value })}
-                  className="w-full p-2 mb-4 border rounded"
-                >
-                  <option value={0}>Seleccionar Supervisor</option>
-                  {users
-                    .map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
-                      </option>
-                    ))}
-                </select>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Correo del Supervisor</label>
+                <input 
+                    type="text"
+                    placeholder="Nombre del Supervisor"
+                    value={currentProject.supervisor}
+                    onChange={(e) => setCurrentProject({ ...currentProject, supervisor: e.target.value })}
+                    className="w-full p-2 mb-4 border rounded"  
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Correo del gerente del proyecto</label>
                 <input
                   type="email"
                   placeholder="Correo del Supervisor"
@@ -945,7 +820,7 @@ export default function ManageProjectsPage() {
                       </option>
                     ))}
                 </select>
-                
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">Costo Total del Proyecto</label>
                 <div className="mb-4 flex items-center space-x-2">
                   <p className="m-0">$</p>
@@ -983,6 +858,20 @@ export default function ManageProjectsPage() {
                     placeholder="Costo de procesamiento de la información"
                     value={currentProject.infoProcessRate}
                     onChange={(e) => setCurrentProject({ ...currentProject, infoProcessRate: Math.max(0, Number(e.target.value)) })}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">Costo por cuadrilla</label>
+                <div className="mb-4 flex items-center space-x-2">
+                  <p className="m-0">$</p>
+                  <input
+                    type="number"
+                    placeholder="Costo de la cuadrilla"
+                    value={currentProject.gridRate}
+                    onChange={(e) => setCurrentProject({ ...currentProject, gridRate: Math.max(0, Number(e.target.value)) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -1030,7 +919,7 @@ export default function ManageProjectsPage() {
                   </p>
 
                   <div className="space-y-3">
-                    {(["monday", "tuesday", "wednesday", "thursday", "friday"] as const).map((day) => (
+                    {(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map((day) => (
                       <div key={day} className="flex items-center">
                         <span className="w-24 font-medium">{getDayName(day)}:</span>
                         <div className="flex items-center">

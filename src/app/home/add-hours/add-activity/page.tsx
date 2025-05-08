@@ -120,7 +120,7 @@ function Content() {
                 ...form,
                 startTime: selectedWorkSchedule.startTime,
                 endTime: selectedWorkSchedule.endTime,
-                collaborators: response.collaborators,
+                collaborators: [...response.collaborators, ...response.topographers],
             })
         })
     }

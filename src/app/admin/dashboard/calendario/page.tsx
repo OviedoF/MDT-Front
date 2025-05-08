@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { isSameDay, format } from "date-fns"
+import { format } from "date-fns"
 
 // Components
 import Header from "./components/work-calendar/Header"
@@ -11,7 +10,6 @@ import ProjectSelector from "./components/work-calendar/ProjectSelector"
 import Calendar from "./components/work-calendar/Calendar"
 import DayDetail from "./components/work-calendar/DayDetail"
 import ReportConfirmationModal from "./components/work-calendar/ReportConfirmationModal"
-import UserEditModal from "./components/work-calendar/UserEditModal"
 import PdfPreviewModal from "./components/work-calendar/PdfPreviewModal"
 
 const dayDetails: DayDetails = {
@@ -86,9 +84,8 @@ const dayDetails: DayDetails = {
 };
 
 // Types and utilities
-import type { DayData, UserDayData, Activity, DayDetails } from "./types"
+import type { DayData, UserDayData, DayDetails } from "./types"
 import { users } from "./components/work-calendar/data"
-import { getDayData } from "./components/work-calendar/utils"
 import { Project } from "./types"
 import { makeQuery } from "@/app/utils/api"
 
@@ -102,13 +99,11 @@ export default function WorkCalendarPage() {
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [currentDayData, setCurrentDayData] = useState<DayDetails>(dayDetails)
   const [loadingDaySummary, setloadingDaySummary] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Modal states
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<UserDayData | null>(null)
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     getProjects()

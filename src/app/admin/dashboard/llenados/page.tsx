@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { FaSignOutAlt, FaExclamationTriangle, FaChevronDown, FaChevronUp } from "react-icons/fa"
 import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
+import { makeQuery } from "@/app/utils/api"
+import { useSnackbar } from "notistack"
 
 interface ProjectMissingHours {
   projectId: string
@@ -21,20 +23,21 @@ export default function MissingHoursPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { enqueueSnackbar } = useSnackbar()
 
   useEffect(() => {
     const fetchMissingHours = async () => {
       try {
-        setIsLoading(true)
-        const response = await fetch("http://localhost:4001/api/project/unregistered")
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setProjectsData(data)
-        setError(null)
+        makeQuery(
+          localStorage.getItem("token"),
+          'getLlenados',
+          {},
+          enqueueSnackbar,
+          (data) => {
+            setProjectsData(data)
+          },
+          setIsLoading,
+        )
       } catch (err) {
         setError("Error al cargar los datos. Por favor, intente nuevamente.")
         console.error("Error fetching missing hours:", err)

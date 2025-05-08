@@ -96,6 +96,7 @@ petitions.getEntriesByDate = (form: FormType) => api.post(`/project/entries-by-d
 petitions.getCalendarData = (form: FormType) => api.get(`/project/calendar?projectId=${form.project}&month=${form.month}`);
 petitions.getDailySummary = (form: FormType) => api.get(`/project/summary?projectId=${form.project}&date=${form.date}`);
 petitions.postDailySummary = (form: FormType) => api.post(`/project/send-summary`, form);
+petitions.getLlenados = () => api.get(`/project/unregistered`);
 
 // * WORK ENTRIES
 petitions.createWorkEntry = (form: FormType) => api.post("/work-entry", form);

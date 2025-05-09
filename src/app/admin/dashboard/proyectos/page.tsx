@@ -82,6 +82,25 @@ const emptyProject: Project = {
   supervisorEmail: "",
 }
 
+const emptyNewProject: Omit<Project, "_id" | "active"> = {
+  name: "",
+  description: "",
+  supervisor: '',
+  topographers: [],
+  collaborators: [],
+  totalCost: 0,
+  hourlyRate: 0,
+  gridRate: 0,
+  billingDate: new Date(),
+  startDate: new Date(),
+  endDate: new Date(),
+  workedHours: 0,
+  workSchedule: defaultWorkSchedule,
+  infoProcessRate: 0,
+  alias: "",
+  supervisorEmail: "",
+}
+
 
 export default function ManageProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -90,7 +109,7 @@ export default function ManageProjectsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project>(emptyProject)
-  const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>(emptyProject)
+  const [newProject, setNewProject] = useState<Omit<Project, "_id" | "active">>(emptyNewProject)
   const [loading, setLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [toggleActiveModal, setToggleActiveModal] = useState(false)
@@ -195,7 +214,7 @@ export default function ManageProjectsPage() {
       (response) => {
         getProjects()
         setIsCreateModalOpen(false)
-        setNewProject(emptyProject)
+        setNewProject(emptyNewProject)
         enqueueSnackbar("Proyecto creado exitosamente", { variant: "success" })
       },
       setLoading,
@@ -594,7 +613,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo Total del Proyecto"
                     value={newProject.totalCost}
-                    onChange={(e) => setNewProject({ ...newProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setNewProject({ ...newProject, totalCost: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -609,7 +628,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo por Hora"
                     value={newProject.hourlyRate}
-                    onChange={(e) => setNewProject({ ...newProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setNewProject({ ...newProject, hourlyRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -623,7 +642,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo de procesamiento de la información"
                     value={newProject.infoProcessRate}
-                    onChange={(e) => setNewProject({ ...newProject, infoProcessRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setNewProject({ ...newProject, infoProcessRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -637,7 +656,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo de la cuadrilla"
                     value={newProject.gridRate}
-                    onChange={(e) => setNewProject({ ...newProject, gridRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setNewProject({ ...newProject, gridRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -828,7 +847,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo Total del Proyecto"
                     value={currentProject.totalCost}
-                    onChange={(e) => setCurrentProject({ ...currentProject, totalCost: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setCurrentProject({ ...currentProject, totalCost: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -843,7 +862,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo por Hora"
                     value={currentProject.hourlyRate}
-                    onChange={(e) => setCurrentProject({ ...currentProject, hourlyRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setCurrentProject({ ...currentProject, hourlyRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -857,7 +876,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo de procesamiento de la información"
                     value={currentProject.infoProcessRate}
-                    onChange={(e) => setCurrentProject({ ...currentProject, infoProcessRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setCurrentProject({ ...currentProject, infoProcessRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"
@@ -871,7 +890,7 @@ export default function ManageProjectsPage() {
                     type="number"
                     placeholder="Costo de la cuadrilla"
                     value={currentProject.gridRate}
-                    onChange={(e) => setCurrentProject({ ...currentProject, gridRate: Math.max(0, Number(e.target.value)) })}
+                    onChange={(e) => setCurrentProject({ ...currentProject, gridRate: Number(e.target.value) })}
                     min="0"
                     step="0.01"
                     className="w-full p-2 border rounded"

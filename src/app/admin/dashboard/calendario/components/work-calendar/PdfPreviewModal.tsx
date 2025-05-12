@@ -26,6 +26,7 @@ export default function PdfPreviewModal({
   dayData,
 }: PdfPreviewModalProps) {
   if (!selectedDate || !dayData) return null
+  console.log("dayData", dayData)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -90,6 +91,19 @@ export default function PdfPreviewModal({
                     <div>
                       <p className="text-sm font-medium">Email del topógrafo:</p>
                       <p>{entry.user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-sm font-medium">Colaboradores:</p>
+                      <ul className="list-disc pl-5">
+                        {entry.collaborators.map((collaborator, index) => (
+                          <li key={collaborator._id} className="mb-1 mr-2">
+                            {collaborator.name}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
 

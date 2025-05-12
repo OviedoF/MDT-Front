@@ -97,6 +97,9 @@ petitions.getCalendarData = (form: FormType) => api.get(`/project/calendar?proje
 petitions.getDailySummary = (form: FormType) => api.get(`/project/summary?projectId=${form.project}&date=${form.date}`);
 petitions.postDailySummary = (form: FormType) => api.post(`/project/send-summary`, form);
 petitions.getLlenados = () => api.get(`/project/unregistered`);
+petitions.createHoliday = (form: FormType) => api.post(`/project/holiday`, form);
+petitions.getHoliday = (form: FormType) => api.post(`/project/get-holiday`, form);
+petitions.deleteHoliday = (form: FormType) => api.delete(`/project/holiday`, form);
 
 // * WORK ENTRIES
 petitions.createWorkEntry = (form: FormType) => api.post("/work-entry", form);

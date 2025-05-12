@@ -4,6 +4,9 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { FaClock, FaUser, FaComments, FaFilePdf, FaPaperPlane, FaTimes } from "react-icons/fa"
 import type { User, DayDetails } from "../../types"
+import { makeQuery } from "@/app/utils/api"
+import { useSnackbar } from "notistack"
+import { useEffect, useState } from "react"
 
 interface DayDetailProps {
   selectedDate: Date
@@ -19,16 +22,63 @@ export default function DayDetail({
   dayData,
   onShowPdfPreview,
   onSendReport,
-  loading,
 }: DayDetailProps) {
+  const [isHoliday, setIsHoliday] = useState(false)
   const { totalHours, extraHours } = dayData
-  console.log("dayData", dayData)
+  const {enqueueSnackbar} = useSnackbar();
+
+  const handleSendHoliday = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      'createHoliday',
+      {
+        date: format(selectedDate, "yyyy-MM-dd")
+      },
+      enqueueSnackbar,
+      (res) => {
+        enqueueSnackbar(res.message, { variant: "success" })
+        getIsHoliday()
+      },
+    )
+  }
+
+  const getIsHoliday = () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      'getHoliday',
+      {
+        date: format(selectedDate, "yyyy-MM-dd")
+      },
+      enqueueSnackbar,
+      (data) => {
+        if (data.isHoliday) {
+          setIsHoliday(true)
+        } else {
+          setIsHoliday(false)
+        }
+      },
+    )
+  }
+
+  useEffect(() => {
+    getIsHoliday()
+  }, [selectedDate])
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mt-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold">Detalle del {format(selectedDate, "d 'de' MMMM", { locale: es })}</h3>
         <div className="flex space-x-2">
+          <button
+            onClick={handleSendHoliday}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            disabled={dayData.status === "sent"}
+          >
+            <FaClock className="mr-2" />
+            {
+              isHoliday ? "Quitar día feriado" : "Marcar día feriado"
+            }
+          </button>
           <button
             onClick={onShowPdfPreview}
             className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center"

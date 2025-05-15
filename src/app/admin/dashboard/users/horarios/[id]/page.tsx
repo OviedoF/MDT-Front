@@ -1,92 +1,100 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { FaSignOutAlt, FaClock } from "react-icons/fa"
+import { useParams, useRouter } from "next/navigation"
+import { FaSignOutAlt, FaClock, FaCalendarAlt } from "react-icons/fa"
+import { makeQuery } from "@/app/utils/api"
 
-interface User {
-  id: number
-  name: string
-  role: "colaborador" | "topografo"
-}
 
 interface Project {
-  id: number
-  name: string
-}
-
-interface WorkEntry {
-  userId: number
-  projectId: number
-  date: Date
+  projectName: string
   regularHours: number
-  overtimeHours: number
+  extraHours: number
+  totalHours: number
 }
 
-const projects: Project[] = [
-  { id: 1, name: "Proyecto A" },
-  { id: 2, name: "Proyecto B" },
-  { id: 3, name: "Proyecto C" },
+interface UserData {
+  name: string
+  regularHours: number
+  extraHours: number
+  totalHours: number
+  projects: Project[]
+}
+
+const months = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ]
 
-// Generar datos de ejemplo para los últimos 30 días
-const generateWorkEntries = (userId: number): WorkEntry[] => {
-  const entries: WorkEntry[] = []
-  const now = new Date()
-  for (let i = 0; i < 30; i++) {
-    const date = new Date(now)
-    date.setDate(now.getDate() - i)
-    const projectId = Math.floor(Math.random() * projects.length) + 1
-    const regularHours = Math.floor(Math.random() * 8) + 1 // 1-8 horas regulares por día
-    const overtimeHours = Math.random() > 0.7 ? Math.floor(Math.random() * 4) : 0 // 0-3 horas extra algunos días
-    entries.push({ userId, projectId, date, regularHours, overtimeHours })
-  }
-  return entries
-}
 
-export default function UserDetailPage({ params }: any ) {
+export default function UserDetailPage() {
   const router = useRouter()
-  const userId = Number.parseInt(params.id)
-  const [user, setUser] = useState<User | null>(null)
-  const [workEntries, setWorkEntries] = useState<WorkEntry[]>([])
+  const params = useParams();
+  const userId = params.id
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
+  const [data, setData] = useState<UserData>(({
+    name: "",
+    regularHours: 0,
+    extraHours: 0,
+    totalHours: 0,
+    projects: [
+      {
+        projectName: "Proyecto A",
+        regularHours: 0,
+        extraHours: 0,
+        totalHours: 0
+      },
+      {
+        projectName: "Proyecto B",
+        regularHours: 0,
+        extraHours: 0,
+        totalHours: 0
+      },
+      {
+        projectName: "Proyecto C",
+        regularHours: 0,
+        extraHours: 0,
+        totalHours: 0
+      }
+    ]
+  }))
+
+  const getData = async () => {
+    makeQuery(
+      localStorage.getItem("token"),
+      'payrollSummaryByUser',
+      { userId, year: selectedYear, month: selectedMonth },
+      undefined,
+      (response: UserData) => {
+        setData(response)
+      },
+      undefined,
+      (error: any) => {
+        console.error("Error al obtener los datos:", error)
+      }
+    )
+  }
 
   useEffect(() => {
-    // Simular la carga de datos del usuario
-    const fetchUser = async () => {
-      // En una aplicación real, esto sería una llamada a la API
-      const userData: User = { id: userId, name: `Usuario ${userId}`, role: "colaborador" }
-      setUser(userData)
-    }
-
-    fetchUser()
-    setWorkEntries(generateWorkEntries(userId))
-  }, [userId])
-
-  const calculateProjectHours = () => {
-    const projectHours: { [key: number]: { regular: number; overtime: number } } = {}
-    workEntries.forEach((entry) => {
-      if (!projectHours[entry.projectId]) {
-        projectHours[entry.projectId] = { regular: 0, overtime: 0 }
-      }
-      projectHours[entry.projectId].regular += entry.regularHours
-      projectHours[entry.projectId].overtime += entry.overtimeHours
-    })
-    return projectHours
-  }
-
-  const projectHours = calculateProjectHours()
-
-  const totalRegularHours = Object.values(projectHours).reduce((sum, hours) => sum + hours.regular, 0)
-  const totalOvertimeHours = Object.values(projectHours).reduce((sum, hours) => sum + hours.overtime, 0)
-
-  if (!user) {
-    return <div>Cargando...</div>
-  }
+    getData()
+  }, [selectedYear, selectedMonth])
 
   return (
     <main className="bg-violet-100 w-full min-h-screen">
       <header className="bg-violet-600 text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Detalle de Usuario: {user.name}</h1>
+        <h1 className="text-2xl font-bold">Detalle de Usuario: {data.name}</h1>
         <button
           onClick={() => router.push("/admin/dashboard")}
           className="flex items-center bg-violet-700 hover:bg-violet-800 px-4 py-2 rounded-md transition duration-300"
@@ -97,18 +105,61 @@ export default function UserDetailPage({ params }: any ) {
       </header>
 
       <section className="p-4">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-4">
+          <h2 className="text-xl font-bold mb-4 flex items-center">
+            <FaCalendarAlt className="mr-2 text-violet-600" />
+            Seleccionar Período
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                Año
+              </label>
+              <select
+                id="year"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full md:w-32 p-2 border rounded"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+                Mes
+              </label>
+              <select
+                id="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="w-full md:w-40 p-2 border rounded"
+              >
+                {months.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-xl font-bold mb-4">Resumen de Horas Trabajadas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-green-100 p-4 rounded-lg">
               <FaClock className="text-green-500 text-3xl mb-2" />
               <h3 className="text-lg font-semibold">Horas Regulares</h3>
-              <p className="text-2xl font-bold">{totalRegularHours}</p>
+              <p className="text-2xl font-bold">{data.regularHours}</p>
             </div>
             <div className="bg-yellow-100 p-4 rounded-lg">
               <FaClock className="text-yellow-500 text-3xl mb-2" />
               <h3 className="text-lg font-semibold">Horas Extra</h3>
-              <p className="text-2xl font-bold">{totalOvertimeHours}</p>
+              <p className="text-2xl font-bold">{data.extraHours}</p>
             </div>
           </div>
         </div>
@@ -134,23 +185,23 @@ export default function UserDetailPage({ params }: any ) {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(projectHours).map(([projectId, hours]) => (
-                  <tr key={projectId}>
+                {data.projects.map((project) => (
+                  <tr key={project.projectName}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {projects.find((p) => p.id === Number.parseInt(projectId))?.name}
+                      {project.projectName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{hours.regular}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{hours.overtime}</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-bold">{hours.regular + hours.overtime}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.regularHours}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{project.extraHours}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-bold">{project.totalHours}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="bg-gray-100">
                   <td className="px-6 py-4 whitespace-nowrap font-bold">Total</td>
-                  <td className="px-6 py-4 whitespace-nowrap font-bold">{totalRegularHours}</td>
-                  <td className="px-6 py-4 whitespace-nowrap font-bold">{totalOvertimeHours}</td>
-                  <td className="px-6 py-4 whitespace-nowrap font-bold">{totalRegularHours + totalOvertimeHours}</td>
+                  <td className="px-6 py-4 whitespace-nowrap font-bold">{data.regularHours}</td>
+                  <td className="px-6 py-4 whitespace-nowrap font-bold">{data.extraHours}</td>
+                  <td className="px-6 py-4 whitespace-nowrap font-bold">{data.totalHours}</td>
                 </tr>
               </tfoot>
             </table>

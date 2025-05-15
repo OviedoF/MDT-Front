@@ -77,6 +77,7 @@ petitions.updateUser = (form: FormType) => api.put(`/user/${form._id}`, form);
 petitions.deleteUser = (id: string) => api.delete(`/user/${id}`);
 petitions.personalRotation = (form: FormType) => api.post(`/user/personal-rotation`, form);
 petitions.payrollSummary = (form: FormType) => api.post(`/user/payroll-summary`, form);
+petitions.payrollSummaryByUser = (form: FormType) => api.post(`/user/payroll-summary/by-user`, form);
 
 // * PROJECTS
 petitions.createProject = (form: FormType) => api.post("/project", form);

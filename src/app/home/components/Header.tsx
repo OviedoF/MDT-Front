@@ -40,7 +40,7 @@ export default function Header() {
     <header className='bg-green py-4 px-4 flex justify-between items-center'>
       <div className='relative w-2/5 h-12'>
         <Image
-          src='/logo_h.svg'
+          src='/logo_top.png'
           alt='header'
           fill
           style={{

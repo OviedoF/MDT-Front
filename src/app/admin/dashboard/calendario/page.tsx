@@ -31,6 +31,9 @@ const dayDetails: DayDetails = {
       ],
       user: { _id: "u1", name: "Juan Pérez", email: "juan@example.com" },
       supervisor: '',
+      supervisorName: "",
+      supervisorSignature: "",
+      topographerSignature: "",
       incompleteUsers: [{ _id: "u3", name: "Carlos Díaz" }],
       activities: [
         {
@@ -60,6 +63,9 @@ const dayDetails: DayDetails = {
       collaborators: [],
       user: { _id: "u1", name: "Juan Pérez", email: "juan@example.com" },
       supervisor: '',
+      supervisorName: "",
+      supervisorSignature: "",
+      topographerSignature: "",
       incompleteUsers: [],
       activities: [
         {

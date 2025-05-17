@@ -54,6 +54,9 @@ interface WorkEntry {
   collaborators: Usercito[]
   user: Usercito
   supervisor: string
+  supervisorName: string
+  supervisorSignature: string
+  topographerSignature: string
   incompleteUsers: Usercito[]
   activities: WorkEntryActivity[]
 }

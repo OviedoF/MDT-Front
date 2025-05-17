@@ -53,7 +53,7 @@ export default function PdfPreviewModal({
                 <div>
                   <p className="font-medium">Horas Normales:</p>
                   <p className="text-xl">{
-                    (parseFloat(dayData.totalHours) - parseFloat(dayData.extraHours)).toFixed(1 )
+                    (parseFloat(dayData.totalHours) - parseFloat(dayData.extraHours)).toFixed(1)
                   } horas</p>
                 </div>
                 <div>
@@ -124,6 +124,18 @@ export default function PdfPreviewModal({
                       <p className="text-sm bg-gray-50 p-2 rounded">{entry.comments}</p>
                     </div>
                   )}
+
+                  <div className="flex justify-end mt-4 gap-10">
+                    <div>
+                      <p className="text-sm font-medium mb-1">Supervisor: {entry.supervisorName}</p>
+                      <img className="w-32 h-auto" src={entry.supervisorSignature} alt="Firma" />
+                    </div>
+
+                    <div className="mb-3">
+                      <p className="text-sm font-medium mb-1">Topógrafo: {entry.user.name}</p>
+                      <img className="w-32 h-auto" src={entry.topographerSignature} alt="Firma" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

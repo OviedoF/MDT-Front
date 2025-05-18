@@ -150,8 +150,13 @@ function Content() {
                 return
             }
 
-            if (!formData.name || !formData.startTime || !formData.endTime || !formData.supervisorName) {
+            if (!formData.name || !formData.startTime || !formData.endTime ) {
                 enqueueSnackbar("Por favor completa todos los campos", { variant: "error" })
+                return
+            }
+
+            if (!formData.supervisorName) {
+                enqueueSnackbar("Por favor ingresa el nombre del supervisor", { variant: "error" })
                 return
             }
 
@@ -162,11 +167,6 @@ function Content() {
 
             if (formData.collaborators.length === 0) {
                 enqueueSnackbar("Por favor selecciona al menos un colaborador", { variant: "error" })
-                return
-            }
-
-            if (!formData.topographerSignature || !formData.supervisorSignature) {
-                enqueueSnackbar("Por favor firma el documento", { variant: "error" })
                 return
             }
 

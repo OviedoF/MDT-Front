@@ -11,6 +11,7 @@ import { makeQuery } from "@/app/utils/api"
 interface Project {
   _id: string
   name: string
+  alias: string
 }
 
 export default function SendProjectEmailPage() {
@@ -146,7 +147,7 @@ export default function SendProjectEmailPage() {
                   <option value="">Seleccione un proyecto</option>
                   {projects.map((project) => (
                     <option key={project._id} value={project._id}>
-                      {project.name}
+                      {project.alias}
                     </option>
                   ))}
                 </select>

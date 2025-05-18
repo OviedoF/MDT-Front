@@ -36,6 +36,7 @@ interface User {
 interface Project {
   _id: string
   name: string
+  alias: string
   active: boolean
 }
 

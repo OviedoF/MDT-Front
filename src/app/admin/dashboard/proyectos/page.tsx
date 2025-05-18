@@ -401,7 +401,7 @@ export default function ManageProjectsPage() {
             <thead>
               <tr>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Nombre
+                  Alias
                 </th>
                 <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Supervisor
@@ -432,7 +432,7 @@ export default function ManageProjectsPage() {
             <tbody>
               {projects.map((project) => (
                 <tr key={project._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{project.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{project.alias}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {project.supervisor}
                   </td>
@@ -472,18 +472,18 @@ export default function ManageProjectsPage() {
                     >
                       <FaEdit />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => handleOpenReportModal(project)}
                       className="text-success hover:text-success"
                     >
                       <FaFileAlt />
-                    </button>
+                    </button> */}
                     <button
                       onClick={() => {
                         setCurrentProject(project)
                         setIsDeleteModalOpen(true)
                       }}
-                      className="text-red-600 hover:text-red-900 ml-2"
+                      className="text-red-600 hover:text-red-900 "
                     >
                       <FaTrash />
                     </button>
@@ -1108,7 +1108,7 @@ function ProjectReportModal({ project: initialProject, onClose, projects }: Proj
             >
               {projects.map((p) => (
                 <option key={p._id} value={p._id}>
-                  {p.name}
+                  {p.alias}
                 </option>
               ))}
             </select>

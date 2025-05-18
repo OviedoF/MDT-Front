@@ -73,6 +73,7 @@ export interface DayDetails {
 export interface Project {
   _id: string
   name: string
+  alias: string
   supervisor: {
     id: number
     name: string

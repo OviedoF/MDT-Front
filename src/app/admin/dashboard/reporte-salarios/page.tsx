@@ -106,7 +106,7 @@ export default function MonthlyPayrollPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1" translate="no">
                 Mes
               </label>
               <select
@@ -116,7 +116,7 @@ export default function MonthlyPayrollPage() {
                 className="w-full md:w-40 p-2 border rounded"
               >
                 {months.map((month, index) => (
-                  <option key={month} value={index}>
+                  <option key={month} value={index}  translate="no">
                     {month}
                   </option>
                 ))}
@@ -126,7 +126,7 @@ export default function MonthlyPayrollPage() {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">
+          <h2 className="text-xl font-bold mb-4"  translate="no">
             Resumen de Nómina - {months[selectedMonth]} {selectedYear}
           </h2>
           <div className="overflow-x-auto">

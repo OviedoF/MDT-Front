@@ -29,7 +29,7 @@ export default function ProjectSelector({ projects, selectedProject, onProjectCh
         >
           {projects.map((project) => (
             <option key={project._id} value={project._id}>
-              {project.name}
+              {project.alias}
             </option>
           ))}
         </select>

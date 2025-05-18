@@ -29,6 +29,7 @@ interface WorkSchedule {
 interface Project {
   _id: string
   name: string
+  alias: string
   description: string
   supervisor: number
   topographers: number[]
@@ -109,7 +110,6 @@ export default function AddCollaboratorPage() {
       enqueueSnackbar,
       (response) => {
         setProjects(response)
-        console.log(response)
       },
       setLoading,
       () => { }
@@ -159,7 +159,7 @@ export default function AddCollaboratorPage() {
               <option value={0}>Selecciona un proyecto</option>
               {projects.map((project) => (
                 <option key={project._id} value={project._id}>
-                  {project.name}
+                  {project.alias}
                 </option>
               ))}
             </select>

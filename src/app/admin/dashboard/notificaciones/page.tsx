@@ -15,6 +15,7 @@ interface User {
 interface Project {
   _id: string
   name: string
+  alias: string
 }
 
 interface Notification {
@@ -229,7 +230,7 @@ export default function NotificationsPage() {
                     <option value="">Sin proyecto específico</option>
                     {projects.map((project) => (
                       <option key={project._id} value={project._id}>
-                        {project.name}
+                        {project.alias}
                       </option>
                     ))}
                   </select>

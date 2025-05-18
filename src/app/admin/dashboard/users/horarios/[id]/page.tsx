@@ -129,7 +129,7 @@ export default function UserDetailPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1" translate="no">
                 Mes
               </label>
               <select
@@ -139,7 +139,7 @@ export default function UserDetailPage() {
                 className="w-full md:w-40 p-2 border rounded"
               >
                 {months.map((month, index) => (
-                  <option key={month} value={index}>
+                  <option key={month} value={index} translate="no">
                     {month}
                   </option>
                 ))}

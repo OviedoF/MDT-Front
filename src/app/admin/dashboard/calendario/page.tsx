@@ -94,6 +94,8 @@ import type { DayData, UserDayData, DayDetails } from "./types"
 import { users } from "./components/work-calendar/data"
 import { Project } from "./types"
 import { makeQuery } from "@/app/utils/api"
+import axios from "axios"
+import env from "@/app/env"
 
 export default function WorkCalendarPage() {
   const { enqueueSnackbar } = useSnackbar()
@@ -141,11 +143,11 @@ export default function WorkCalendarPage() {
     // * Month in YYYY-MM format
     const month = currentDate.toISOString().slice(0, 7)
     console.log("Month:", month)
-    
+
     makeQuery(
       localStorage.getItem("token"),
       "getCalendarData",
-      { 
+      {
         project: selectedProject,
         month: month
       },
@@ -228,6 +230,28 @@ export default function WorkCalendarPage() {
     )
   }
 
+  const handleDownload = async () => {
+    const response = await axios.post(
+      `${env.API_URL}/project/download-summary`,
+      { date: format(selectedDate || '', "yyyy-MM-dd"), projectId: selectedProject },
+      {
+        responseType: 'blob',
+      }
+    );
+
+    // Crear link de descarga
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reporte.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   return (
     <main className="bg-violet-100 w-full min-h-screen">
       <Header title="Calendario de Trabajo" />
@@ -270,10 +294,11 @@ export default function WorkCalendarPage() {
         onClose={() => setIsPdfPreviewOpen(false)}
         onSendReport={confirmSendReport}
         selectedDate={selectedDate}
-        selectedProject={selectedProject}               
+        selectedProject={selectedProject}
         projects={projects}
         users={users}
         dayData={currentDayData}
+        handleDownload={handleDownload}
       />
     </main>
   )

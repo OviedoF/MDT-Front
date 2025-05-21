@@ -7,8 +7,10 @@ import { FaClock, FaPlus, FaSearch, FaCheck, FaTrash, FaFileAlt } from "react-ic
 import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 import { useRouter, useSearchParams } from "next/navigation"
+import type { DayDetails } from '../../../admin/dashboard/calendario/types'
 import dayjs from "dayjs"
 import "dayjs/locale/es"
+import PdfPreviewModal from "./PdfPreviewModal"
 dayjs.locale("es")
 
 const dayNames: any = {
@@ -68,6 +70,12 @@ function Content() {
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false)
     const [currentSignatureType, setCurrentSignatureType] = useState<"surveyor" | "supervisor">("surveyor")
 
+    // PDF preview state
+    const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [previewData, setPreviewData] = useState<DayDetails | null>(null)
+    const [projectName, setProjectName] = useState('')
+
     const { enqueueSnackbar } = useSnackbar()
     const navigate = useRouter().push
     const searchParams = useSearchParams()
@@ -91,8 +99,8 @@ function Content() {
         // * Conseguir la primera hora de inicio de las actividades
         if (activities.length > 0) {
             return activities.reduce((earliest, activity) => (activity.startTime < earliest ? activity.startTime : earliest), activities[0].startTime)
-        }   
-        
+        }
+
         return "08:00"
     }
 
@@ -100,8 +108,8 @@ function Content() {
         // * Conseguir la última hora de fin de las actividades
         if (activities.length > 0) {
             return activities.reduce((latest, activity) => (activity.endTime > latest ? activity.endTime : latest), activities[0].endTime)
-        }   
-        
+        }
+
         return "17:00"
     }
 
@@ -110,7 +118,6 @@ function Content() {
         const dayName = dateFormat.format("dddd")
 
         makeQuery(localStorage.getItem("token"), "getProject", project || "", enqueueSnackbar, (response) => {
-            console.log("Project data:", response)
             const selectedWorkSchedule = response.workSchedule[dayNames[dayName]] || {
                 startTime: "00:00",
                 endTime: "00:00",
@@ -122,6 +129,8 @@ function Content() {
                 endTime: selectedWorkSchedule.endTime,
                 collaborators: [...response.collaborators, ...response.topographers],
             })
+
+            setProjectName(response.name)
         })
     }
 
@@ -132,7 +141,6 @@ function Content() {
         }
 
         if (currentStep === 4) {
-            console.log("Submitting form data...")
             const formData = {
                 ...form,
                 project,
@@ -150,7 +158,7 @@ function Content() {
                 return
             }
 
-            if (!formData.name || !formData.startTime || !formData.endTime ) {
+            if (!formData.name || !formData.startTime || !formData.endTime) {
                 enqueueSnackbar("Por favor completa todos los campos", { variant: "error" })
                 return
             }
@@ -537,6 +545,51 @@ function Content() {
         )
     }
 
+    const handlePreview = () => {
+        const formData = {
+            ...form,
+            project,
+            date,
+            startTime: getInitHour(),
+            endTime: getEndHour(),
+            activities,
+            topographerSignature: surveyorSignature,
+            supervisorSignature: supervisorSignature,
+            closeTime: reportCloseTime,
+        }
+
+        if (activities.length === 0) {
+            enqueueSnackbar("Por favor agrega al menos una actividad", { variant: "error" })
+            return
+        }
+
+        if (!formData.name || !formData.startTime || !formData.endTime) {
+            enqueueSnackbar("Por favor completa todos los campos", { variant: "error" })
+            return
+        }
+
+        if (!formData.supervisorName) {
+            enqueueSnackbar("Por favor ingresa el nombre del supervisor", { variant: "error" })
+            return
+        }
+
+        if (formData.startTime >= formData.endTime) {
+            enqueueSnackbar("La hora de inicio debe ser menor que la hora de fin", { variant: "error" })
+            return
+        }
+
+        if (formData.collaborators.length === 0) {
+            enqueueSnackbar("Por favor selecciona al menos un colaborador", { variant: "error" })
+            return
+        }
+
+
+        makeQuery(localStorage.getItem("token"), "getDailySummaryFromEntry", formData, enqueueSnackbar, (res: DayDetails) => {
+            setIsPdfPreviewOpen(true)
+            setPreviewData(res)
+        })
+    }
+
     const renderStep4 = () => {
         return (
             <div className="space-y-6">
@@ -608,7 +661,15 @@ function Content() {
                         Regresar
                     </button>
                     <button className="w-full bg-[#6A8D73] hover:bg-[#5a7a62] text-white rounded-lg py-3 px-4 transition-colors" onClick={handleNext}>
-                        Finalizar informe
+                        {
+                            supervisorSignature && surveyorSignature ? "Finalizar" : "Guardar"
+                        } informe
+                    </button>
+                    <button
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 px-4 transition-colors"
+                        onClick={handlePreview}
+                    >
+                        Previsualizar
                     </button>
                 </div>
             </div>
@@ -642,6 +703,14 @@ function Content() {
                     onSave={handleSaveSignature}
                     title={currentSignatureType === "surveyor" ? "Firma del topógrafo" : "Firma del Supervisor"}
                 />
+
+                {previewData && <PdfPreviewModal
+                    isOpen={isPdfPreviewOpen}
+                    onClose={() => setIsPdfPreviewOpen(false)}
+                    selectedDate={selectedDate}
+                    project={projectName}
+                    dayData={previewData}
+                />}
             </div>
         </UserPage>
     )

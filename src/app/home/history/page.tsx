@@ -9,6 +9,7 @@ interface Project {
     id: string
     _id: string
     name: string
+    alias: string
     description: string
     incompleteDays: number
     active: boolean
@@ -58,7 +59,7 @@ export default function page() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <span className="font-bold text-gray-800">{project.name}</span>
+                                    <span className="font-bold text-gray-800">{project.alias}</span>
                                     {" - "}
                                     <span className="font-normal text-gray-500">{project.description}</span>
                                 </div>

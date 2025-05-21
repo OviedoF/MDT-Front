@@ -2,34 +2,26 @@
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import type { DayDetails, Project, User } from "../../types"
-import Modal from "./Modal"
-import env from "@/app/env"
-import axios from "axios"
+import type { DayDetails } from '../../../admin/dashboard/calendario/types'
+import Modal from '../../../admin/dashboard/calendario/components/work-calendar/Modal'
 
 interface PdfPreviewModalProps {
   isOpen: boolean
   onClose: () => void
-  onSendReport: () => void
   selectedDate: Date | null
-  selectedProject: string
-  projects: Project[]
-  users: User[]
+  project: string
   dayData: DayDetails | undefined
-  handleDownload: () => void
 }
 
 export default function PdfPreviewModal({
   isOpen,
   onClose,
-  onSendReport,
   selectedDate,
-  selectedProject,
-  projects,
+  project,
   dayData,
-  handleDownload
 }: PdfPreviewModalProps) {
   if (!selectedDate || !dayData) return null
+  console.log("dayData", dayData)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -46,7 +38,7 @@ export default function PdfPreviewModal({
           <div className="bg-white p-8 shadow-md">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold">Informe de Actividades</h2>
-              <h3 className="text-xl">{projects.find((p) => p._id === selectedProject)?.name}</h3>
+              <h3 className="text-xl">{project}</h3>
               <p className="text-gray-600">{format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}</p>
             </div>
 
@@ -129,15 +121,15 @@ export default function PdfPreviewModal({
                   )}
 
                   <div className="flex justify-end mt-4 gap-10">
-                    <div>
+                    {entry.supervisorSignature && <div>
                       <p className="text-sm font-medium mb-1">Supervisor: {entry.supervisorName}</p>
                       <img className="w-32 h-auto" src={entry.supervisorSignature} alt="Firma" />
-                    </div>
+                    </div>}
 
-                    <div className="mb-3">
+                    {entry.topographerSignature && <div className="mb-3">
                       <p className="text-sm font-medium mb-1">Topógrafo: {entry.user.name}</p>
                       <img className="w-32 h-auto" src={entry.topographerSignature} alt="Firma" />
-                    </div>
+                    </div>}
                   </div>
                 </div>
               ))}
@@ -148,22 +140,6 @@ export default function PdfPreviewModal({
               <img src="/logo.jpg" alt="Logo" className="w-32 h-auto" />
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end mt-4 gap-5">
-          <button
-            onClick={handleDownload}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
-          >
-            <span className="mr-2">⬇</span> Descargar informe
-          </button>
-
-          <button
-            onClick={onSendReport}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
-          >
-            <span className="mr-2">📧</span> Enviar por Email
-          </button>
         </div>
       </div>
     </Modal>

@@ -26,6 +26,8 @@ interface WorkEntry {
   date: string
   startTime: string
   endTime: string
+  topographerSignature: string
+  supervisorSignature: string
 }
 
 interface Project {
@@ -76,16 +78,15 @@ function Content() {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [entries, setEntries] = useState<WorkEntry[]>([])
   const [projectData, setProjectData] = useState<Project | null>(null)
-  const todayDayName = dayjs().format("dddd")
   const searchParams = useSearchParams()
   const project = searchParams.get("project")
   const { enqueueSnackbar } = useSnackbar()
 
   // Obtener la semana actual (lunes a domingo)
-  const getWeekDays = () => {
-    const startOfWeek = dayjs().startOf("week").add(1, "day") // Lunes
-    return Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, "day"))
-  }
+const getWeekDays = () => {
+  const today = dayjs()
+  return Array.from({ length: 7 }, (_, i) => today.subtract(6 - i, "day"))
+}
 
   const weekDays = getWeekDays()
 
@@ -212,6 +213,20 @@ function Content() {
                   {getTimeDiff(entry.startTime, entry.endTime)}
                 </span>
               </div>
+
+              {(!entry.topographerSignature || !entry.supervisorSignature) && (
+                <div className="bg-red-100 rounded-lg p-4 px-6 mt-4 flex justify-between items-center">
+                  <div className="text-gray-800 text-sm">
+                    {entry.topographerSignature ? "Falta firma del supervisor" : "Falta firma del topógrafo"}
+                  </div>
+                  <Link
+                    href={`/home/add-hours/entry-detail?entryId=${entry._id}`}
+                    className="bg-[#698167] text-white py-2 px-4 rounded-md font-medium"
+                  >
+                    Firmar
+                  </Link>
+                </div>
+              )}
 
               <Link
                 href={`/home/add-hours/entry-detail?entryId=${entry._id}`}

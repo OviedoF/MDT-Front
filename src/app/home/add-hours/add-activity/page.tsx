@@ -42,26 +42,31 @@ interface Collaborator {
 }
 
 function Content() {
+    const { enqueueSnackbar } = useSnackbar()
+    const navigate = useRouter().push
+    const searchParams = useSearchParams()
+    const project = searchParams.get("project")
+    const date = searchParams.get("date")
     const [currentStep, setCurrentStep] = useState<Step>(1)
     const [activities, setActivities] = useState<Activity[]>([])
     const [newActivity, setNewActivity] = useState<Activity>({
         id: Date.now().toString(),
         name: "",
         description: "",
-        startTime: "08:00",
-        endTime: "17:00",
+        startTime: "07:00",
+        endTime: "16:00",
         isOvertime: false, // Default to regular hours
     })
     const [isActivityFormOpen, setIsActivityFormOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [reportCloseTime, setReportCloseTime] = useState("")
     const [form, setForm] = useState({
-        name: `Registro ${dayjs().format("DD/MM/YYYY")}`,
+        name: `Registro ${dayjs(date).format("DD/MM/YYYY")}`,
         comments: "",
         collaborators: [] as Collaborator[],
         supervisorName: "",
-        startTime: "08:00",
-        endTime: "17:00",
+        startTime: "07:00",
+        endTime: "16:00",
     })
 
     // Signature state
@@ -76,12 +81,6 @@ function Content() {
     const [previewData, setPreviewData] = useState<DayDetails | null>(null)
     const [projectName, setProjectName] = useState('')
 
-    const { enqueueSnackbar } = useSnackbar()
-    const navigate = useRouter().push
-    const searchParams = useSearchParams()
-    const project = searchParams.get("project")
-    const date = searchParams.get("date")
-
     const filteredCollaborators = form.collaborators.filter((collab) =>
         collab.name.toLowerCase().includes(searchQuery.toLowerCase()),
     )
@@ -94,6 +93,29 @@ function Content() {
         console.log("Form data:", form)
     }, [form])
 
+    useEffect(() => {
+        const activitiesSaved = localStorage.getItem("activities")
+        const collaboratorsSaved = localStorage.getItem("collaborators")
+
+        if (activitiesSaved) {
+            setActivities(JSON.parse(activitiesSaved))
+        }
+
+        if (collaboratorsSaved) {
+            setForm((prev) => ({
+                ...prev,
+                collaborators: JSON.parse(collaboratorsSaved),
+            }))
+        }
+    }, [])
+
+    useEffect(() => {
+        localStorage.setItem("activities", JSON.stringify(activities))
+    }, [activities])
+
+    useEffect(() => {
+        localStorage.setItem("collaborators", JSON.stringify(form.collaborators))
+    }, [form.collaborators])
 
     const getInitHour = () => {
         // * Conseguir la primera hora de inicio de las actividades
@@ -180,6 +202,8 @@ function Content() {
 
             makeQuery(localStorage.getItem("token"), "createWorkEntry", formData, enqueueSnackbar, () => {
                 enqueueSnackbar("Actividad creada con éxito", { variant: "success" })
+                localStorage.removeItem("activities")
+                localStorage.removeItem("collaborators")
                 navigate(`/home/add-hours?project=${project}`)
             })
         }

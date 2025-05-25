@@ -205,6 +205,12 @@ function Content() {
     enqueueSnackbar("Actividad eliminada correctamente", { variant: "success" })
   }
 
+  const getWeekday = (date: string) => {
+    const day = new Date(date).getDay()
+    const weekdays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] 
+    return weekdays[day]
+  } 
+
   return (
     <UserPage>
       {/* Date Header */}
@@ -213,9 +219,7 @@ function Content() {
           <div className="text-4xl font-bold text-gray-700">{entry.date.split("-")[2]}</div>
 
           <div className="text-gray-600 text-left">
-            {new Date(entry.date).toLocaleString("es-ES", {
-              weekday: "long",
-            })}
+            {getWeekday(entry.date)}
             <br />
             {new Date(entry.date).toLocaleString("es-ES", {
               month: "long",

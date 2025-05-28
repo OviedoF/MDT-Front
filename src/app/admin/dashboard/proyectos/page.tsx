@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSnackbar } from "notistack"
-import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock, FaCheck } from "react-icons/fa"
+import { FaEdit, FaSignOutAlt, FaTrash, FaProjectDiagram, FaFileAlt, FaClock, FaCheck, FaEye, FaUsers } from "react-icons/fa"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { makeQuery } from "@/app/utils/api"
@@ -114,6 +114,7 @@ export default function ManageProjectsPage() {
   const [users, setUsers] = useState<User[]>([])
   const [toggleActiveModal, setToggleActiveModal] = useState(false)
   const [toggleDesactiveModal, setToggleDesactiveModal] = useState(false)
+  const [toggleUsersModal, setToggleUsersModal] = useState(false)
   const router = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
@@ -505,6 +506,17 @@ export default function ManageProjectsPage() {
                           <FaCheck className="mr-1" onClick={() => setToggleDesactiveModal(true)} />
                         </span>
                       )}
+                    </button>
+
+                    {/* Modal de ver usuarios del proyecto */}
+                    <button
+                      onClick={() => {
+                        setCurrentProject(project)
+                        setToggleUsersModal(true)
+                      }}
+                      className="text-gray-600 hover:text-gray-900 ml-2"
+                    >
+                      <FaUsers />
                     </button>
                   </td>
                 </tr>
@@ -1059,6 +1071,37 @@ export default function ManageProjectsPage() {
           onClose={() => setIsReportModalOpen(false)}
           projects={projects.filter((p) => p.active)}
         />
+      )}
+
+      {/* Users Modal */}
+      {toggleUsersModal && currentProject._id && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full px-4">
+          <div className="relative top-20 mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Usuarios del Proyecto: {currentProject.name}</h3>
+            <div className="max-h-[70vh] overflow-y-auto pr-2">
+              <h4 className="text-md font-semibold mb-2">Topógrafos</h4>
+              <ul className="list-disc pl-5 mb-4">
+                {currentProject.topographers.map((topographer: any) => (
+                  <li key={topographer._id}>{topographer.name}</li>
+                ))}
+              </ul>
+              <h4 className="text-md font-semibold mb-2">Colaboradores</h4>
+              <ul className="list-disc pl-5">
+                {currentProject.collaborators.map((collaborator: any) => (
+                  <li key={collaborator._id}>{collaborator.name}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setToggleUsersModal(false)}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )

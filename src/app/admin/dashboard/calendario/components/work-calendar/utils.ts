@@ -60,6 +60,8 @@ export const getDayColor = (dayData: DayData): string => {
       return "bg-blue-200 hover:bg-blue-300"
     case "pending":
       return "bg-yellow-200 hover:bg-yellow-300"
+    case "missing-signatures":
+      return "bg-orange-200 hover:bg-orange-300"
     default:
       return "bg-gray-200"
   }

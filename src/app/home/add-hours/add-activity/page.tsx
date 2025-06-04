@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import UserPage from "../../components/UserPage"
 import SignatureModal from "./SignatureModal"
-import { FaClock, FaPlus, FaSearch, FaCheck, FaTrash, FaFileAlt } from "react-icons/fa"
+import { FaClock, FaPlus, FaSearch, FaCheck, FaTrash, FaFileAlt, FaEdit } from "react-icons/fa"
 import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -57,6 +57,7 @@ function Content() {
         endTime: "16:00",
         isOvertime: false, // Default to regular hours
     })
+    const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
     const [isActivityFormOpen, setIsActivityFormOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [reportCloseTime, setReportCloseTime] = useState("")
@@ -255,7 +256,19 @@ function Content() {
 
     const addActivity = () => {
         if (newActivity.name && newActivity.startTime && newActivity.endTime) {
-            setActivities([...activities, { ...newActivity, id: Date.now().toString() }])
+            if (editingActivityId) {
+                // Update existing activity
+                setActivities((prev) =>
+                    prev.map((activity) =>
+                        activity.id === editingActivityId ? { ...newActivity, id: editingActivityId } : activity,
+                    ),
+                )
+                setEditingActivityId(null)
+            } else {
+                // Add new activity
+                setActivities((prev) => [...prev, { ...newActivity, id: Date.now().toString() }])
+            }
+            
             setNewActivity({
                 id: Date.now().toString(),
                 name: "",
@@ -343,7 +356,6 @@ function Content() {
     }
 
     const renderStep2 = () => {
-        // Now this is the activities step (previously step 1)
         return (
             <div className="space-y-6">
                 <div>
@@ -352,9 +364,8 @@ function Content() {
                     {renderStepIndicator()}
                 </div>
 
-                {/* List of activities */}
                 <div className="space-y-4">
-                    {activities.map((activity) => (
+                    {activities.map((activity, index) => (
                         <div
                             key={activity.id}
                             className={`${activity.isOvertime ? "bg-amber-50 border border-amber-200" : "bg-gray-100"} rounded-lg p-4`}
@@ -368,9 +379,18 @@ function Content() {
                                         </span>
                                     )}
                                 </div>
-                                <button className="text-red-500" onClick={() => removeActivity(activity.id)}>
-                                    <FaTrash className="w-4 h-4" />
-                                </button>
+                                <div>
+                                    <button className="text-green-500 mr-2" onClick={() => {
+                                        setNewActivity(activity)
+                                        setEditingActivityId(activity.id)
+                                        setIsActivityFormOpen(true)
+                                    }}>
+                                        <FaEdit className="w-4 h-4" />
+                                    </button>
+                                    <button className="text-red-500" onClick={() => removeActivity(activity.id)}>
+                                        <FaTrash className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2 mb-2">
                                 <div>

@@ -27,7 +27,7 @@ export interface DayData {
   totalHours: string 
   extraHours: string
   sent: boolean
-  status: "incomplete" | "complete" | "sent" | "pending"
+  status: "incomplete" | "complete" | "sent" | "pending" | "missing-signatures"
 }
 
 interface Usercito {
@@ -66,7 +66,7 @@ export interface DayDetails {
   totalHours: string
   extraHours: string
   sent: boolean
-  status: "incomplete" | "complete" | "sent" | "pending"
+  status: "incomplete" | "complete" | "sent" | "pending" | "missing-signatures"
   entries: WorkEntry[]
 }
 

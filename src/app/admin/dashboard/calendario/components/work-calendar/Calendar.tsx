@@ -101,6 +101,13 @@ export default function Calendar({ currentDate, calendarData, onDateClick, onPre
                 <span>Pendiente</span>
               </div>
             )}
+
+            {dayData?.status === "missing-signatures" && (
+              <div className="mt-1 text-orange-600 text-xs flex items-center">
+                <FaClock className="mr-1" size={10} />
+                <span>Firmas pendientes</span>
+              </div>
+            )}
           </>}
         </div>,
       )

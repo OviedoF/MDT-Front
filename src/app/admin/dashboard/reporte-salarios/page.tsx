@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { FaSignOutAlt, FaInfoCircle, FaCalendarAlt } from "react-icons/fa"
 import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
+import env from "@/app/env"
+import axios from "axios"
 
 interface User {
   _id: string
@@ -31,7 +33,7 @@ export default function MonthlyPayrollPage() {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
   const [users, setUsers] = useState<User[]>([])
   const { enqueueSnackbar } = useSnackbar()
-  
+
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
   const months = [
@@ -52,6 +54,28 @@ export default function MonthlyPayrollPage() {
   const openModal = (user: User) => {
     setSelectedUser(user)
     setIsModalOpen(true)
+  }
+
+  const downloadPdf = async () => {
+    const response = await axios.post(
+      `${env.API_URL}/user/payroll-summary-downloadpdf`,
+      { year: selectedYear, month: selectedMonth },
+      {
+        responseType: 'blob',
+      }
+    );
+
+    // Crear link de descarga
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Sumario.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
   }
 
   useEffect(() => {
@@ -87,46 +111,56 @@ export default function MonthlyPayrollPage() {
             <FaCalendarAlt className="mr-2 text-violet-600" />
             Seleccionar Período
           </h2>
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
-                Año
-              </label>
-              <select
-                id="year"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full md:w-32 p-2 border rounded"
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
+          <div className="flex justify-between">
+            <div className="flex flex-wrap gap-4">
+              <div>
+                <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                  Año
+                </label>
+                <select
+                  id="year"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full md:w-32 p-2 border rounded"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1" translate="no">
+                  Mes
+                </label>
+                <select
+                  id="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full md:w-40 p-2 border rounded"
+                >
+                  {months.map((month, index) => (
+                    <option key={month} value={index} translate="no">
+                      {month}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1" translate="no">
-                Mes
-              </label>
-              <select
-                id="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="w-full md:w-40 p-2 border rounded"
-              >
-                {months.map((month, index) => (
-                  <option key={month} value={index}  translate="no">
-                    {month}
-                  </option>
-                ))}
-              </select>
-            </div>
+
+            <button
+              onClick={downloadPdf}
+              className="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+            >
+              Descargar Resumen
+            </button>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4"  translate="no">
+          <h2 className="text-xl font-bold mb-4" translate="no">
             Resumen de Nómina - {months[selectedMonth]} {selectedYear}
           </h2>
           <div className="overflow-x-auto">

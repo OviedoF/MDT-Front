@@ -48,6 +48,10 @@ export default function ProjectSelector({ projects, selectedProject, onProjectCh
           <div className="w-4 h-4 bg-blue-200 mr-1 rounded"></div>
           <span className="text-sm">Informe Enviado</span>
         </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-orange-200 mr-1 rounded"></div>
+          <span className="text-sm">Pendiente Firma</span>
+        </div>
       </div>
     </div>
   )

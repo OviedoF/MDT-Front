@@ -8,6 +8,8 @@ import { useSearchParams } from "next/navigation"
 import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 import CollaboratorsModal from "./CollaboratorsModal"
+import type { DayDetails } from '../../../admin/dashboard/calendario/types'
+import PdfPreviewModal from "../add-activity/PdfPreviewModal"
 
 interface User {
   _id: string
@@ -56,6 +58,8 @@ function Content() {
   const [editing, setEditing] = useState(false)
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
   const [isAddingActivity, setIsAddingActivity] = useState(false)
+  const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
+  const [previewData, setPreviewData] = useState<DayDetails | null>(null)
   const [newActivity, setNewActivity] = useState<Activity>({
     name: "",
     description: "",
@@ -69,6 +73,16 @@ function Content() {
 
   const getEntryDetails = async () => {
     makeQuery(localStorage.getItem("token"), "getWorkEntry", entryId || "", enqueueSnackbar, (data) => {
+      makeQuery(
+        localStorage.getItem("token"),
+        "getDailySummaryFromEntry",
+        { _id: data._id },
+        enqueueSnackbar,
+        (summaryData: DayDetails) => {
+          setPreviewData(summaryData)
+        },
+      )
+
       // Si no hay actividades, inicializamos como array vacío
       setEntry({
         ...data,
@@ -119,8 +133,10 @@ function Content() {
       (response: WorkEntry) => {
         console.log("Colaboradores actualizados", response.collaborators)
         console.log("entry", entry.collaborators)
-        setEntry({ ...entry, 
-          collaborators: response.collaborators })
+        setEntry({
+          ...entry,
+          collaborators: response.collaborators
+        })
         enqueueSnackbar("Colaboradores actualizados correctamente", { variant: "success" })
         setEditingCollaborators(false)
       },
@@ -148,12 +164,12 @@ function Content() {
     )
   }
   const getInitHour = () => {
-      // * Conseguir la primera hora de inicio de las actividades
-      const startHour = entry.activities.reduce((prev, curr) => {
-        if (prev.startTime < curr.startTime) return prev
-        return curr
-      }, entry.activities[0])
-      return startHour.startTime
+    // * Conseguir la primera hora de inicio de las actividades
+    const startHour = entry.activities.reduce((prev, curr) => {
+      if (prev.startTime < curr.startTime) return prev
+      return curr
+    }, entry.activities[0])
+    return startHour.startTime
   }
 
   const getEndHour = () => {
@@ -207,9 +223,13 @@ function Content() {
 
   const getWeekday = (date: string) => {
     const day = new Date(date).getDay()
-    const weekdays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] 
+    const weekdays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     return weekdays[day]
-  } 
+  }
+
+  const handlePreview = () => {
+    setIsPdfPreviewOpen(true)
+  };
 
   return (
     <UserPage>
@@ -300,9 +320,8 @@ function Content() {
                 entry.activities.map((activity, index) => (
                   <div
                     key={activity._id || index}
-                    className={`${
-                      activity.isOvertime ? "bg-amber-50 border border-amber-200" : "bg-gray-100"
-                    } rounded-lg p-4 relative`}
+                    className={`${activity.isOvertime ? "bg-amber-50 border border-amber-200" : "bg-gray-100"
+                      } rounded-lg p-4 relative`}
                   >
                     {/* Activity Header */}
                     <div className="flex justify-between items-center mb-2">
@@ -584,6 +603,13 @@ function Content() {
               </button>
             )}
           </div>
+
+          <button
+            className="w-full bg-gray-100 mt-5 hover:bg-gray-200 text-gray-700 rounded-lg py-3 px-4 transition-colors"
+            onClick={handlePreview}
+          >
+            Previsualizar
+          </button>
         </div>
 
         {/* Signature Modal */}
@@ -600,6 +626,14 @@ function Content() {
           onSave={handleSaveCollaborators}
           title="Colaboradores"
         />
+
+        {previewData && <PdfPreviewModal
+          isOpen={isPdfPreviewOpen}
+          onClose={() => setIsPdfPreviewOpen(false)}
+          selectedDate={new Date(entry.date)}
+          project={entry.name}
+          dayData={previewData}
+        />}
       </div>
     </UserPage>
   )

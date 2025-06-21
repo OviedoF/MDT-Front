@@ -78,15 +78,16 @@ function Content() {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [entries, setEntries] = useState<WorkEntry[]>([])
   const [projectData, setProjectData] = useState<Project | null>(null)
+  const [weekOffset, setWeekOffset] = useState(0)
   const searchParams = useSearchParams()
   const project = searchParams.get("project")
   const { enqueueSnackbar } = useSnackbar()
 
   // Obtener la semana actual (lunes a domingo)
-const getWeekDays = () => {
-  const today = dayjs()
-  return Array.from({ length: 7 }, (_, i) => today.subtract(6 - i, "day"))
-}
+  const getWeekDays = () => {
+    const startOfWeek = dayjs().add(weekOffset, 'week').startOf('week') // lunes
+    return Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, 'day'))
+  }
 
   const weekDays = getWeekDays()
 
@@ -132,6 +133,14 @@ const getWeekDays = () => {
     getProjectData()
   }, [selectedDate])
 
+  useEffect(() => {
+    // Al cambiar la semana, si la fecha seleccionada no está en esa semana, seleccionar el primer día
+    const newWeekDays = getWeekDays()
+    if (!newWeekDays.some(day => day.isSame(selectedDate, 'day'))) {
+      setSelectedDate(newWeekDays[0])
+    }
+  }, [weekOffset])
+
   return (
     <UserPage>
       <div className="flex items-center justify-between p-2 px-10 bg-[#EDEDED]">
@@ -158,7 +167,25 @@ const getWeekDays = () => {
         <div className="rounded-2xl shadow-sm mb-4">
           <div className="flex items-start">
             <div className="flex-1">
+              <div className="flex items-center justify-between w-full mb-2">
+                <button
+                  onClick={() => setWeekOffset(prev => prev - 1)}
+                  className="text-gray-700 hover:text-[#6A8D73] font-bold text-xl px-2"
+                >
+                  ←
+                </button>
+                <span className="text-sm font-medium text-gray-600">
+                  Semana del {weekDays[0].format("DD/MM")} al {weekDays[6].format("DD/MM")}
+                </span>
+                <button
+                  onClick={() => setWeekOffset(prev => prev + 1)}
+                  className="text-gray-700 hover:text-[#6A8D73] font-bold text-xl px-2"
+                >
+                  →
+                </button>
+              </div>
               <div className="mt-3 flex">
+
                 <div className="grid grid-cols-7 w-full text-md text-center">
                   {weekDays.map((day, i) => (
                     <div

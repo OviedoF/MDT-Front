@@ -252,12 +252,22 @@ export default function WorkCalendarPage() {
     window.URL.revokeObjectURL(url);
   }
 
+  const downloadPdf = () => {
+    window.open(
+      `${env.API_URL}/project/calendar/pdf?month=${
+        currentDate.toISOString().slice(0, 7)
+      }&projectId=${selectedProject}`,
+      "_blank"
+    )
+  }
+
+
   return (
     <main className="bg-violet-100 w-full min-h-screen">
       <Header title="Calendario de Trabajo" />
 
       <section className="p-4">
-        <ProjectSelector projects={projects} selectedProject={selectedProject} onProjectChange={handleProjectChange} />
+        <ProjectSelector projects={projects} selectedProject={selectedProject} onProjectChange={handleProjectChange} downloadPdf={downloadPdf}/>
 
         <Calendar
           currentDate={currentDate}

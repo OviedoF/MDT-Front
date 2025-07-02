@@ -7,9 +7,10 @@ interface ProjectSelectorProps {
   projects: Project[]
   selectedProject: string
   onProjectChange: (projectId: string) => void
+  downloadPdf: () => void
 }
 
-export default function ProjectSelector({ projects, selectedProject, onProjectChange }: ProjectSelectorProps) {
+export default function ProjectSelector({ projects, selectedProject, onProjectChange, downloadPdf }: ProjectSelectorProps) {
   return (
     <div className="mb-4 bg-white p-4 rounded-lg shadow-md">
       <div className="flex items-center mb-4">
@@ -53,6 +54,14 @@ export default function ProjectSelector({ projects, selectedProject, onProjectCh
           <span className="text-sm">Pendiente Firma</span>
         </div>
       </div>
+
+      {/* Download PDF Button */}
+      <button
+        onClick={downloadPdf}
+        className="bg-violet-600 text-white px-4 py-2 rounded hover"
+      >
+        Descargar PDF
+      </button>
     </div>
   )
 }

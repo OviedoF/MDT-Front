@@ -37,6 +37,7 @@ interface WorkEntry {
   collaborators: User[]
   activities: Activity[]
   closeTime?: string
+  supervisorName: string
 }
 
 function Content() {
@@ -53,6 +54,7 @@ function Content() {
     topographerSignature: null,
     collaborators: [],
     activities: [],
+    supervisorName: ""
   })
   const [editingCollaborators, setEditingCollaborators] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -154,6 +156,7 @@ function Content() {
         endTime: entry.endTime,
         comments: entry.comments,
         activities: entry.activities,
+        supervisorName: entry.supervisorName,
       },
       enqueueSnackbar,
       () => {
@@ -518,6 +521,17 @@ function Content() {
               readOnly={!editing}
               onChange={(e) => setEntry({ ...entry, comments: e.target.value })}
             ></textarea>
+          </div>
+          
+          <div className="mb-6">
+            <label className="text-sm text-gray-600 block mb-2">Nombre del supervisor</label>
+            <input
+              type="text"
+              onChange={(e) => setEntry({ ...entry, supervisorName: e.target.value })}
+              readOnly={!editing}
+              value={entry.supervisorName}
+              className="bg-gray-100 w-full rounded-lg p-3 text-center text-gray-700"
+            />
           </div>
 
           {/* Collaborators */}

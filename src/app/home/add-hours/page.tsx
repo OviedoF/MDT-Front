@@ -112,7 +112,8 @@ function Content() {
       project || '',
       enqueueSnackbar,
       (response) => {
-        const selectedWorkSchedule = response.workSchedule[dayNames[selectedDate.format("dddd")]] || {
+        console.log('response', response.workSchedule)
+        const selectedWorkSchedule = response.workSchedule[dayNames[selectedDate.format("dddd")] ] || {
           startTime: "00:00",
           endTime: "00:00",
         }

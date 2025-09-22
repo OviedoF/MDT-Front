@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import UserPage from "../../components/UserPage"
 import SignatureModal from "../add-activity/SignatureModal"
 import { FaClock, FaCheck, FaEdit, FaTrash, FaPlus } from "react-icons/fa"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { makeQuery } from "@/app/utils/api"
 import { useSnackbar } from "notistack"
 import CollaboratorsModal from "./CollaboratorsModal"
@@ -58,6 +58,7 @@ function Content() {
   })
   const [editingCollaborators, setEditingCollaborators] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
   const [isAddingActivity, setIsAddingActivity] = useState(false)
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
@@ -71,6 +72,7 @@ function Content() {
   })
   const searchParams = useSearchParams()
   const entryId = searchParams.get("entryId")
+  const navigate = useRouter()
   const { enqueueSnackbar } = useSnackbar()
 
   const getEntryDetails = async () => {
@@ -91,6 +93,21 @@ function Content() {
         activities: data.activities || [],
       })
     })
+  }
+
+  const deleteEntry = () => {
+    if (!entryId) return
+
+    makeQuery(
+      localStorage.getItem("token"),
+      "deleteWorkEntry",
+      entryId,
+      enqueueSnackbar,
+      () => {
+        enqueueSnackbar("Entrada eliminada correctamente", { variant: "success" })
+        navigate.back()
+      },
+    )
   }
 
   useEffect(() => {
@@ -616,7 +633,38 @@ function Content() {
                 Guardar
               </button>
             )}
+            
+              <button
+                className="w-full bg-[#dc3545] hover:bg-[#c82333] text-white rounded-lg py-3 px-4 transition-colors"
+                onClick={() => setDeleting(true)}
+              >
+                Eliminar entrada
+              </button>
           </div>
+          
+
+          {/* Deleting */}
+
+          {deleting && (
+            <div className="mt-6 p-4 border border-red-300 bg-red-50 rounded-lg">
+              <h3 className="text-red-700 font-medium mb-2">¿Estás seguro de que deseas eliminar esta entrada?</h3>
+              <p className="text-sm text-red-600 mb-4">Esta acción no se puede deshacer.</p>
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2 transition-colors"
+                  onClick={deleteEntry}
+                >
+                  Confirmar eliminación
+                </button>
+                <button
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg py-2 transition-colors"
+                  onClick={() => setDeleting(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             className="w-full bg-gray-100 mt-5 hover:bg-gray-200 text-gray-700 rounded-lg py-3 px-4 transition-colors"

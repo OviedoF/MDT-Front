@@ -62,7 +62,7 @@ function Content() {
     const [searchQuery, setSearchQuery] = useState("")
     const [reportCloseTime, setReportCloseTime] = useState("")
     const [form, setForm] = useState({
-        name: `Registro ${dayjs(date).format("DD/MM/YYYY")}`,
+        name: `Registro ${dayjs(date).format("dddd DD/MM/YYYY")}`,
         comments: "",
         collaborators: [] as Collaborator[],
         supervisorName: "",

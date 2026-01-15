@@ -82,7 +82,7 @@ export default function PdfPreviewModal({
                     </div>
                     <div>
                       <p className="text-sm font-medium">Hora de Salida:</p>
-                      <p>{entry.endTime}</p>
+                      <p>{entry.endTime}</p> 
                     </div>
                   </div>
 

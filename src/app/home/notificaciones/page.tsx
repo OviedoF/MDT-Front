@@ -33,6 +33,15 @@ export default function NotificationsPage() {
         setNotifications(response)
       },
     )
+    
+    makeQuery(
+      localStorage.getItem("token"),
+      'readUserNotifications',
+      {},
+      enqueueSnackbar,
+      (response) => {
+      },
+    )
   }
 
   useEffect(() => {

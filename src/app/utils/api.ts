@@ -114,6 +114,7 @@ petitions.deleteWorkEntry = (id: string) => api.delete(`/work-entry/${id}`);
 // * NOTIFICATIONS
 petitions.getNotifications = () => api.get("/notification");
 petitions.getUserNotifications = () => api.get("/notification/user");
+petitions.readUserNotifications = () => api.get("/notification/read");
 petitions.getNotification = (id: string) => api.get(`/notification/${id}`);
 petitions.createNotification = (form: FormType) => api.post("/notification", form);
 petitions.updateNotification = (form: FormType) => api.put(`/notification/${form._id}`, form);

@@ -6,6 +6,7 @@ import type { DayDetails, Project, User } from "../../types"
 import Modal from "./Modal"
 import env from "@/app/env"
 import axios from "axios"
+import { useState } from "react"
 
 interface PdfPreviewModalProps {
   isOpen: boolean
@@ -30,6 +31,8 @@ export default function PdfPreviewModal({
   handleDownload
 }: PdfPreviewModalProps) {
   if (!selectedDate || !dayData) return null
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isSending, setIsSending] = useState(false)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -82,7 +85,7 @@ export default function PdfPreviewModal({
                     </div>
                     <div>
                       <p className="text-sm font-medium">Hora de Salida:</p>
-                      <p>{entry.endTime}</p> 
+                      <p>{entry.endTime}</p>
                     </div>
                   </div>
 
@@ -152,17 +155,55 @@ export default function PdfPreviewModal({
 
         <div className="flex justify-end mt-4 gap-5">
           <button
-            onClick={handleDownload}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            onClick={async () => {
+              try {
+                setIsDownloading(true)
+                await handleDownload()
+              } finally {
+                setIsDownloading(false)
+              }
+            }}
+            disabled={isDownloading}
+            className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center transition
+    ${isDownloading ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            <span className="mr-2">⬇</span> Descargar informe
+            {isDownloading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Descargando...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">⬇</span>
+                Descargar informe
+              </>
+            )}
           </button>
 
           <button
-            onClick={onSendReport}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            onClick={async () => {
+              try {
+                setIsSending(true)
+                await onSendReport()
+              } finally {
+                setIsSending(false)
+              }
+            }}
+            disabled={isSending}
+            className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center transition
+    ${isSending ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            <span className="mr-2">📧</span> Enviar por Email
+            {isSending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">📧</span>
+                Enviar por Email
+              </>
+            )}
           </button>
         </div>
       </div>
